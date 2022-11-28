@@ -1,0 +1,111 @@
+{-# Language NamedFieldPuns #-}
+
+module Data.Graph.HSI.Init (mkPyramid, mkTriangle)
+    where
+
+import Data.Graph.Dag
+import Data.Graph.HSI.Face
+import Data.Graph.HSI.Halfspace ( HsKey(..), hsFromList, normalize )
+import Data.Graph.HSI.Polytope
+
+import qualified Data.Vector.Unboxed as VU
+
+import qualified Data.EnumMap.Strict as Map
+
+
+-- ATTENTION: The HsiKeys to the Edges start with 2!!
+
+sqrt2 :: Double
+sqrt2 = sqrt 2
+
+sqrt2h :: Double
+sqrt2h = sqrt2 / 2
+
+sqrt2_100 :: Double
+sqrt2_100 =sqrt2 * 100
+
+-- -----------------------------------------------------------------
+-- 3-dim pyramide
+-- -----------------------------------------------------------------
+
+mkPyramid :: Polytope
+mkPyramid = Polytope { polyHs = hsPyramid, polyDag = mkPyramidDag }
+
+-- Create the graph structure for the Pyramid
+mkPyramidDag :: Dag Face
+mkPyramidDag = addEdge 1 [2,3,4,5,6] 3 []
+     -- dummy for debugging
+     -- $ addEdge 100 [100] 3 []
+     -- 2-dim faces
+     $ addEdge 2 [ 7,  8,  9]     2 [2]
+     $ addEdge 3 [ 7, 10, 13]     2 [3]
+     $ addEdge 4 [ 9, 10, 11, 12] 2 [1]  -- base
+     $ addEdge 5 [ 8, 11, 14]     2 [5]
+     $ addEdge 6 [12, 13, 14]     2 [4]
+     -- 1-dim faces
+     $ addEdge 7 [15, 17]         1 [2,3]
+     $ addEdge 8 [16,17]          1 [2,5]
+     $ addEdge 9 [15,16]          1 [1,2]
+     $ addEdge 10 [15,18]         1 [1,3]
+     $ addEdge 11 [16,19]         1 [1,5]
+     $ addEdge 12 [18,19]         1 [1,4]
+     $ addEdge 13 [17,18]         1 [3,4]
+     $ addEdge 14 [17,19]         1 [5,4]
+     -- Vertices
+     -- TODO: Remove hs from vertex data structure or add correct data !!
+     $ addVertex 15 [1,2,3] [ 300.0,  300.0,  -100.0]
+     $ addVertex 16 [1,2,5] [-300.0,  300.0,  -100.0]
+     $ addVertex 17 [2,3,4,5] [ 0.0,    0.0,   200.0]
+     $ addVertex 18 [1,3,4] [ 300.0, -300.0,  -100.0]
+     $ addVertex 19 [1,4,5] [-300.0, -300.0,  -100.0]
+     -- $ addVertex 100 [] []                             -- to debug hsi algo
+     $ dagInit 1
+
+
+hsPyramid :: HsMap
+hsPyramid = Map.fromAscList $ zip [1..] hsList
+     where
+          hsList = map hsFromList  [[0,0,1, -100],                        -- 1
+                                    [0, -sqrt2h, -sqrt2h, -sqrt2_100],    -- 2
+                                    [-sqrt2h, 0, -sqrt2h, -sqrt2_100],    -- 3
+                                    [0,  sqrt2h, -sqrt2h, -sqrt2_100],    -- 4
+                                    [sqrt2h, 0,  -sqrt2h, -sqrt2_100]]    -- 5
+
+-- -----------------------------------------------------------------
+-- 2-dim triangle
+-- -----------------------------------------------------------------
+
+mkTriangle :: Polytope
+mkTriangle = Polytope { polyHs = hsTri, polyDag = mkTriangleDag }
+
+-- Create the graph structure for a Triangle
+mkTriangleDag :: Dag Face
+mkTriangleDag =  addEdge 1 [2,3,4] 2 []
+     $ addEdge 2 [5,6] 1 [2]
+     $ addEdge 3 [5,7] 1 [3]
+     $ addEdge 4 [7,6] 1 [4]
+     $ addVertex 5 [2,3] [ 0,  2]
+     $ addVertex 6 [2,4] [-4, -2]
+     $ addVertex 7 [3,4] [ 4, -2]
+     $ dagInit 1
+
+hsTri :: HsMap
+hsTri = Map.fromAscList $ zip [2..] hsList
+     where
+          hsList = map (normalize . hsFromList )
+               [[ sqrt2h,  -sqrt2h, -sqrt2],   --2
+               [ -sqrt2h, -sqrt2h, -sqrt2],    --3
+               [0, 1, -2] ]                    --4
+
+-- ---------------------------------------------------------------------------
+-- Local helper function to add nodes
+-- ----------------------------------------------------------------------------
+addEdge :: NodeKey -> [NodeKey] -> Dim -> [HsKey]  -> Dag Face -> Dag Face
+addEdge nodeKey subKeys dim hsKeys dag =
+     let face = Edge mempty dim hsKeys Hidden
+         node = Node {nodeKids = subKeys, nodeData = face}
+     in  dagUpdateNode dag nodeKey node
+
+addVertex :: NodeKey -> [HsKey] -> [Double] -> Dag Face -> Dag Face
+addVertex nodeKey hsKeys coords dag = dagCreateNode nodeKey [] (mkVertex hsKeys vec) dag
+     where vec = VU.fromList coords
