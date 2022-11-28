@@ -21,7 +21,7 @@ triangle21 = -- dagLinkParents [3,4] 7
 
 
 -- Write visiting sequence into node
-writeVisitingSequence :: NodeFunctionState Triangle2 Int
+writeVisitingSequence :: NodeFunction Triangle2 Int
 writeVisitingSequence (key, node) = do
     dag <- getDag
     s <- getUstate
@@ -33,7 +33,7 @@ writeVisitingSequence (key, node) = do
 
 -- Postorder processing with single visit to node
 triangle22 :: Dag Triangle2
-triangle22 = postOrderSingleState writeVisitingSequence 0 triangle21
+triangle22 = postOrderSingle writeVisitingSequence 0 triangle21
 
 rslt_triangle22 :: String
 rslt_triangle22 = "DAG start = 1\n" ++
@@ -49,7 +49,7 @@ rslt_triangle22 = "DAG start = 1\n" ++
 -- Postorder processing with multiple visits to a node
 -- Add the visiting sequence to the nodes
 triangle23 :: Dag Triangle2
-triangle23 = postOrderMultipleState writeVisitingSequence 0 triangle21
+triangle23 = postOrderMultiple writeVisitingSequence 0 triangle21
 
 rslt_triangle23 :: String
 rslt_triangle23 = "DAG start = 1\n" ++

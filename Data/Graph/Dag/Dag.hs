@@ -40,16 +40,20 @@ dagNode dag key = (dagMap dag) Map.! key   -- TODO: Comment on missing keys
 dagStartNode :: Dag n -> Node n
 dagStartNode dag = dagNode dag $ start dag
 
+{-
 -- Return a list of all the subnodes of a node
 dagSubnodes :: Dag n -> Node n -> [Node n]
 dagSubnodes dag node = dagNode dag <$> nodeKids node
+-}
 
+{-
 -- Map a function over the subnodes of a node.
 -- Return a list with the results.
 dagMapSubnodes :: (Node n -> b) -> Dag n -> Node n -> [b]
 dagMapSubnodes fun dag (Node{nodeKids}) =
   let subnodes = dagNode dag <$> nodeKids
   in  fun <$> subnodes
+-}
 
 -- Map a function over the subnodes of a node.
 -- Return a list of pairs with NodeKey and function result of the key
@@ -159,59 +163,21 @@ getNode nodeKey = do
 -- ---------------------------------------------------------------------------
 -- Node Functions
 -- ---------------------------------------------------------------------------
-type NodeFunction n = (NodeKey, Node n) ->  Dag n -> Dag n
+type NodeFunction n u = (NodeKey, Node n) -> State (DagAlgoData n u) ()
 type NodePredicate n = Node n -> Bool
-
-type NodeFunctionState n u = (NodeKey, Node n) -> State (DagAlgoData n u) ()
 
 -- ---------------------------------------------------------------------------
 -- Postorder processing
 -- ---------------------------------------------------------------------------
-{-}
--- Process postorder without transfering state to the node processing function.
--- Nodes are only visited once
-postOrderSingleOLD :: NodeFunction n -> Dag n -> Dag n
-postOrderSingleOLD nodefun dag = postOrderSingleFilterOLD nodefun (const True) dag
 
--- Process postorder without transfering state to the node processing function.
---   Nodes are only visited once.
---   Process only those nodes, that evaluate the filter predicate to true.
---   For a node where the predicat evaluates to False, the subnodes are ignored too.
-postOrderSingleFilterOLD :: forall n . NodeFunction n -> NodePredicate n -> Dag n -> Dag n
-postOrderSingleFilterOLD nodefun pred dag =
-    dsDag $ execState (go  `mapM` [start dag]) (dsInit dag ())
-  where
-    go :: NodeKey -> State (DagAlgoData n u) ()
-    go key = do
-        -- Get the current node
-        dag1 <- gets dsDag
-        let node = dagNode dag1 key
-        if  pred node
-            then do
-                -- Add the current key to the processed keys
-                modifyDups $ Set.insert key
-                dups <- gets dsDups
-                 -- Get the direct children that haven't been processed
-                let subkeys = (nodeKids node) \\ (Set.toList dups)
-                -- Recursion over the children
-                _ <- go `mapM` subkeys
-                -- Process the current node
-                modifyDag $ nodefun (key, node)
-            else do
-                modifyDups $ Set.insert key
+-- Process postorder. Single visits to each node.
+postOrderSingle :: NodeFunction n u -> u -> Dag n -> Dag n
+postOrderSingle nodefun ustate dag =
+  postOrderSingleFilter nodefun (const True) ustate dag
 
--}
-
--- Process postorder with passing a global user-state (single visit with repetition)
-postOrderSingleState :: NodeFunctionState n u -> u -> Dag n -> Dag n
-postOrderSingleState nodefun ustate dag =
-  postOrderSingleStateFilter nodefun (const True) ustate dag
-
--- Process postorder with passing a global state (single visit with repetition)
--- subnodes are only processed, if the node satisfies the predicate function.
-
-postOrderSingleStateFilter :: forall n u . NodeFunctionState n u -> NodePredicate n -> u -> Dag n -> Dag n
-postOrderSingleStateFilter nodefun pred ustat dag =
+-- Process postorder. Single visits to each node. Filter function to skip nodes
+postOrderSingleFilter :: forall n u . NodeFunction n u -> NodePredicate n -> u -> Dag n -> Dag n
+postOrderSingleFilter nodefun pred ustat dag =
     dsDag $ execState (go `mapM` [start dag]) (dsInit dag ustat)
   where
     go :: NodeKey -> State (DagAlgoData n u) ()
@@ -234,36 +200,14 @@ postOrderSingleStateFilter nodefun pred ustat dag =
                 modifyDups $ Set.insert key
 
 
--- Process postorder without transfering state. Nodes are visited multiple times
---   Process only those nodes, that evaluate the predicate to true.
---   For a node where the predicat evaluates to False, the subnodes are ignored too.
-postOrderMultipleFilter :: forall n . NodeFunction n -> NodePredicate n -> Dag n -> Dag n
-postOrderMultipleFilter nodefun pred dag =
-    dsDag $ execState (go `mapM` [start dag]) (dsInit dag ())
-  where
-    go :: NodeKey -> State (DagAlgoData n u) ()
-    go key = do
-        -- Get the current node
-        dag1 <- gets dsDag
-        let node = dagNode dag1 key
-        if  pred node
-            then do
-                -- Recursion over the children
-                _ <- go `mapM` (nodeKids node)
-                -- Process the current node
-                modifyDag $ nodefun (key, node)
-            else pure ()
+-- Process postorder. Multiple visits to each node.
+postOrderMultiple :: NodeFunction n u -> u -> Dag n -> Dag n
+postOrderMultiple nodefun ustate dag =
+  postOrderMultipleFilter nodefun (const True) ustate dag
 
-
-
--- Postorder processing with multiple node visits and transfering state
-postOrderMultipleState :: NodeFunctionState n u -> u -> Dag n -> Dag n
-postOrderMultipleState nodefun ustate dag =
-  postOrderMultipleStateFilter nodefun (const True) ustate dag
-
-
-postOrderMultipleStateFilter :: forall n u . NodeFunctionState n u -> NodePredicate n -> u -> Dag n -> Dag n
-postOrderMultipleStateFilter nodefun pred ustat dag =
+-- Process postorder. Multiple visits to each node. Filter function to skip nodes
+postOrderMultipleFilter :: forall n u . NodeFunction n u -> NodePredicate n -> u -> Dag n -> Dag n
+postOrderMultipleFilter nodefun pred ustat dag =
     dsDag $ execState (go `mapM` [start dag]) (dsInit dag ustat)
   where
     go ::  NodeKey -> State (DagAlgoData n u) ()
@@ -282,23 +226,24 @@ postOrderMultipleStateFilter nodefun pred ustat dag =
 -- -------------------------------------------------------------------------------------------
 -- Preorder processing
 -- -------------------------------------------------------------------------------------------
--- Process preorder without transfering state. Nodes are onlyvisited once
-preOrderSingle :: NodeFunction n -> Dag n -> Dag n
-preOrderSingle nodefun dag = preOrderSingleFilter nodefun (const True) dag
 
-preOrderSingleFilter :: forall n . NodeFunction n -> NodePredicate n -> Dag n -> Dag n
-preOrderSingleFilter nodefun pred dag =
-    dsDag $ execState (go `mapM` [start dag]) (dsInit dag ())
+-- Process preorder. Single visits to each node.
+preOrderSingle :: NodeFunction n u -> u -> Dag n -> Dag n
+preOrderSingle nodefun ustate dag  = preOrderSingleFilter nodefun (const True) ustate dag
+
+-- Process preorder. Single visits to each node. Filter function to skip nodes
+preOrderSingleFilter :: forall n u. NodeFunction n u-> NodePredicate n -> u -> Dag n -> Dag n
+preOrderSingleFilter nodefun pred ustate dag =
+    dsDag $ execState (go `mapM` [start dag]) (dsInit dag ustate)
   where
     go :: NodeKey -> State (DagAlgoData n u) ()
     go key = do
         -- Get the current node
-        dag1 <- gets dsDag
-        let node = dagNode dag1 key
+        node <- getNode key
         if  pred node
             then do
                 -- Process the current node
-                modifyDag $ nodefun (key, node)
+                _ <- nodefun (key, node)
                 -- Add the current NodeKey to the set of the processed
                 modifyDups $ Set.insert key
                 dups <- gets dsDups
@@ -310,67 +255,20 @@ preOrderSingleFilter nodefun pred dag =
             else do
                 modifyDups $ Set.insert key
 
-{-}
--- Process preorder without transfering state. Nodes are visited multiple times.
---   The predicate function will be executed before the processing of the current node
---   and if it evaluates to false, the current node and all the children won't be processed.
-preOrderMultipleFilterOLD :: forall n u . NodeFunctionState n u -> NodePredicate n -> u -> Dag n -> Dag n
-preOrderMultipleFilterOLD nodefun pred param0 dag =
-    dsDag $ execState (go `mapM` [start dag]) (dsInit dag param0)
-  where
-    go :: NodeKey -> State (DagAlgoData n u) ()
-    go  key = do
-        -- Get the current node
-        dag1 <- gets dsDag
-        let node = dagNode dag1 key
-        if  pred node
-            then do
-                -- Process the current node
-                param <- gets dsUstate
-                let (dag2, param2) = nodefun (key, node) param dag1
-                putDag dag2
-                putUstate param2
-                -- Recursion over the children
-                _ <- go `mapM` (nodeKids node)
-                pure ()
-            else pure ()
--}
-
-
-
--- Process preorder without transfering state. Nodes are visited multiple times.
---   The predicate function will be executed before the processing of the current node
---   and if it evaluates to false, the current node and all the children won't be processed.
-preOrderMultipleFilter :: forall n u . NodeFunctionState n u -> NodePredicate n -> u -> Dag n -> Dag n
-preOrderMultipleFilter nodefun pred param0 dag =
-    dsDag $ execState (go `mapM` [start dag]) (dsInit dag param0)
+-- Process preorder. Multiple visits to each node. Filter function to skip nodes
+preOrderMultipleFilter :: forall n u . NodeFunction n u -> NodePredicate n -> u -> Dag n -> Dag n
+preOrderMultipleFilter nodefun pred param dag =
+    dsDag $ execState (go `mapM` [start dag]) (dsInit dag param)
   where
     go :: NodeKey -> State (DagAlgoData n u) ()
     go  key = do
         -- Get the current node
         node <- getNode key
-        -- dag1 <- gets dsDag
-        -- let node = dagNode dag1 key
         if  pred node
             then do
                 -- Process the current node
                 _ <- nodefun (key, node) -- param dag1
-                -- param <- gets dsUstate
-                -- let (dag2, param2) = nodefun (key, node) -- param dag1
-                -- putDag dag2
-                -- putUstate param2
                 -- Recursion over the children
                 _ <- go `mapM` (nodeKids node)
                 pure ()
             else pure ()
-
--- -----------------------------------------------------------------------------------
--- Start new function with State Monad in Node function
--- ...................................................................................
-
--- type NodeFunctionState n u = (NodeKey, Node n) -> State (DagAlgoData n u) ()
-
-
--- ...................................................................................
--- End new function
--- ------------------------------------------------------------------------------------

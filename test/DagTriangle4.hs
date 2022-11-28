@@ -27,7 +27,7 @@ nodeDataPred (Node{nodeData = (bool, _)}) = bool
 -- Lift up data from bottom nodes to above nodes
 -- type NodeFunction a = (NodeKey, Node a) ->  Dag a -> Dag a
 
-nodeFunct :: NodeFunctionState (Bool, Int) ()
+nodeFunct :: NodeFunction (Bool, Int) ()
 nodeFunct (nodekey, Node {nodeKids, nodeData}) = do
     dag <- getDag
     let newNode = Node {nodeKids, nodeData = (fst nodeData, 1 + snd nodeData)}
@@ -36,7 +36,7 @@ nodeFunct (nodekey, Node {nodeKids, nodeData}) = do
 
 -- Processing on a single
 triangle42 :: Dag Triangle4
-triangle42 = postOrderSingleStateFilter nodeFunct nodeDataPred () triangle41
+triangle42 = postOrderSingleFilter nodeFunct nodeDataPred () triangle41
 
 rslt_triangle42 :: String
 rslt_triangle42 = "DAG start = 1\n" ++

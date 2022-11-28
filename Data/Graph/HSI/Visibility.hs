@@ -16,14 +16,14 @@ import qualified Data.EnumMap.Strict as Map
 -- Calculate the visibility flags for all nodes of our polytope
 visPoly :: VU.Vector Double -> Polytope -> Dag Face
 visPoly direction poly =
-    preOrderMultipleFilter (visNodeNEW direction) condNode Visible $ polyDag poly
+    preOrderMultipleFilter (visNode direction) condNode Visible $ polyDag poly
     -- It's not necessary to reset the visibility field on all the nodes,
     --   as long as the new dag is not written back to the polytope.
   where
     hsmap = polyHs poly
     -- NodeFunction to calculate the visiblity of a node
-    visNodeNEW :: VU.Vector Double -> NodeFunctionState Face Visibility
-    visNodeNEW  dirvect (nodekey,node) = do
+    visNode :: VU.Vector Double -> NodeFunction Face Visibility
+    visNode  dirvect (nodekey,node) = do
         dag <- getDag
         vis <- getUstate
         let -- if the scalarproduct beetween the direction vector and
@@ -46,8 +46,8 @@ visPoly direction poly =
         -- if a face is visible, then all its kids are also visible.
         when (vis == Visible && (nodeVis node) == Hidden) $ do                                                            -- TODO: Use when !!
             let newNode = nodeSetVis vis node
-            _ <- putDag $ dagUpdateNode dag nodekey newNode
-            pure ()
+            putDag $ dagUpdateNode dag nodekey newNode
+        pure ()
 
     -- Predicate function to stop processing on nodes that are already marked Visible
     -- and do not process Vertices.

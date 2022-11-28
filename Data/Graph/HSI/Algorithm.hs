@@ -11,13 +11,12 @@ import Data.Graph.HSI.Utils
 import Data.Graph.Dag
 
 import qualified Data.Vector.Unboxed as VU
-
 import qualified Data.EnumMap as Map
+import qualified Data.Set as Set
 
 import Data.Set (Set)
-import qualified Data.Set as Set
 import Data.List ( partition, (\\) )
-import Control.Monad
+import Control.Monad.State.Strict ( State, unless, when )
 
 import Debug.Trace ( trace )
 
@@ -44,6 +43,7 @@ checkRelHs relPos0 hs0 poly0  = go (wipeOutOnEdge relPos0) hs0 poly0
       | otherwise = Left ("checkRelHs got strange relPos:" ++ show relPos)
 
 -- Calculate the relHsPos for a polytope
+-- TODO: Avoid preprocessing of the vertices, so we can save dagUpdateLeafs
 relHsPosPoly :: Halfspace -> Polytope -> Polytope
 relHsPosPoly hs poly@Polytope {polyDag = dag0 } =
     poly {polyDag = newDag }
@@ -51,7 +51,7 @@ relHsPosPoly hs poly@Polytope {polyDag = dag0 } =
     -- First process the leaves
     dag1 = dagUpdateLeafs  (setHsPosLeaf hs) dag0
     -- then process all the non-leaf faces
-    newDag = postOrderSingleState relHsPosNode () dag1
+    newDag = postOrderSingle relHsPosNode () dag1
 
     -- Set the newly calculated relHsPos to a vertex node
     setHsPosLeaf :: Halfspace -> Face -> Face
@@ -59,7 +59,7 @@ relHsPosPoly hs poly@Polytope {polyDag = dag0 } =
     setHsPosLeaf hs0 (Vertex _ vec hskeys) =
       Vertex (relHsPosVertex hs0 vec) vec hskeys
     -- Calculate the relHsPos for a single node
-    relHsPosNode :: NodeFunctionState Face ()
+    relHsPosNode :: NodeFunction Face ()
     relHsPosNode (key, node@Node{nodeData = pLoad}) = do
       dag <- getDag
       let pairsKeysRelpos = dagMapSubnodesKey (faceGetRelHsPos . nodeData) dag node
@@ -91,9 +91,9 @@ relHsPosPoly hs poly@Polytope {polyDag = dag0 } =
 -- Remove Nodes, that are now outside the new halfspace
 hsiIntersectHMin :: Polytope -> Polytope
 hsiIntersectHMin poly@Polytope {polyDag} =
-    poly {polyDag = postOrderSingleState nodeRemove Set.empty polyDag}
+    poly {polyDag = postOrderSingle nodeRemove Set.empty polyDag}
   where
-    nodeRemove :: NodeFunctionState  Face (Set NodeKey)
+    nodeRemove :: NodeFunction  Face (Set NodeKey)
     nodeRemove (key, node@Node{nodeKids, nodeData}) = do
       dag@Dag {dagMap} <- getDag
       deleted <- getUstate
@@ -107,15 +107,14 @@ hsiIntersectHMin poly@Polytope {polyDag} =
       putDag newDag
       putUstate newDeleted
 
--- ------------------------------------------------------------------------------------------
-
--- Add the necessary new faces to the polytope
+-- Intersect with H0.
+-- Calculate and add new faces.
 hsiIntersectH0 :: (HsKey, Polytope) -> Polytope
 hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
   where
-    newDag = postOrderMultipleStateFilter (processNode  polyHs) isToProcess () polyDag
+    newDag = postOrderMultipleFilter (processNode  polyHs) isToProcess () polyDag
 
-    processNode :: HsMap -> NodeFunctionState Face ()
+    processNode :: HsMap -> NodeFunction Face ()
     processNode hsmap (key,node) = do
       dag <- getDag
       let fstKey = head $ nodeKids node
@@ -126,22 +125,20 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
 
           fstNode = dagNode dag $ fstKey
           fstNodeData = nodeData fstNode
-          xrelHsPos = faceGetRelHsPos $ nodeData node
+          relHsPos = faceGetRelHsPos $ nodeData node
 
       -- TODO: Clean up this code, do we really need to check again for bothside or allside ??
       unless (faceGetRelHsPos fstNodeData == onEdge) $ do
-              let dag2 = if (xrelHsPos == bothside || xrelHsPos == allside)
-                            then let (newKey, dag1) = mkNewNode hsmap grandKidsKeys dag node
-                                 in  linkToParent newKey key dag1
-                            else trace  ("ATTENTION Algorithms hit code that was regarded as dead code") $ dag     -- This is the case, if the node is in H+
-              putDag dag2
+          when (relHsPos == bothside || relHsPos == allside) $ do
+              newKey <- mkNewNode hsmap grandKidsKeys node
+              linkToParent newKey key
       pure ()
 
     -- Make new new Node with a face: insert it into the dag
     -- and return both, key and node.
-    -- TODO: Try to change this function to state monad
-    mkNewNode :: HsMap -> [NodeKey] -> Dag Face -> Node Face -> (NodeKey, Dag Face)
-    mkNewNode hsmap kids dag node =
+    mkNewNode :: HsMap -> [NodeKey] -> Node Face -> State (DagAlgoData Face u) NodeKey
+    mkNewNode hsmap kids node = do
+      dag <- getDag
       let dim = nodeDim node
           (newSubs, newFace) =
             if dim == 1
@@ -152,7 +149,8 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
                      in  (kids, Edge onEdge (dim -1) hsKeys Hidden)
           newnode = node{ nodeKids = newSubs, nodeData = newFace}
           (newKey, dag1) = dagInsertNode newnode dag
-      in  (newKey, dag1)
+      putDag dag1
+      pure newKey
 
     -- Return true, if this node has points on both sides of the halfspace
     isToProcess :: NodePredicate Face
@@ -169,9 +167,9 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
     --       side of the halfspace!
 
     -- Connect a node to a parent node
-    -- TODO: Try to change this function to state monad
-    linkToParent :: NodeKey -> NodeKey -> Dag Face -> Dag Face
-    linkToParent newSubkey parentKey dag =
-          let parentNodeFromDag = dagNode dag parentKey
-              updParent = nodeAddKey newSubkey parentNodeFromDag
-          in  dagUpdateNode dag parentKey updParent
+    linkToParent :: NodeKey -> NodeKey -> State (DagAlgoData Face u) ()
+    linkToParent newSubkey parentKey = do
+      dag <- getDag
+      let parentNode = dagNode dag parentKey
+          updParent = nodeAddKey newSubkey parentNode
+      putDag $ dagUpdateNode dag parentKey updParent
