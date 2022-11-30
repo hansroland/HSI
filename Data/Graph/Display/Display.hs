@@ -21,7 +21,6 @@ import qualified Data.Vector as V
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
 
-
 -- IndexedEdge are edges with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
             segKey1 :: NodeKey,
@@ -84,7 +83,7 @@ getEdges dag =
     in  fmap node2seg $ filter (\n -> nodeDim n == 1) $ Map.elems $ dagMap dag
 
 
-
+-- Make visible edges
 mkVisEdge :: Int -> Int -> IndexedEdge
 mkVisEdge k1 k2 = IndexedEdge (int2NodeKey  k1) (int2NodeKey k2) Visible
 

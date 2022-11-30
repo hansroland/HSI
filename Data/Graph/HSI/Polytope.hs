@@ -7,7 +7,7 @@ module Data.Graph.HSI.Polytope where
 
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
-import Data.Graph.HSI.RelHsPos
+import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Utils
 
 
@@ -65,9 +65,9 @@ mapHs :: (Halfspace -> b) -> HsMap -> [HsKey] -> [b]
 mapHs hsFun hsmap keys = map (hsFun . getHalfSpace hsmap) keys
 
 -- Get the relative halfspace position of a polytope
-polyRelHsPos :: Polytope -> RelHsPos
-polyRelHsPos Polytope {polyDag} =
-    faceGetRelHsPos $ nodeData $ dagNode polyDag $ start polyDag
+polyRelPos :: Polytope -> RelPos
+polyRelPos Polytope {polyDag} =
+    faceGetRelPos $ nodeData $ dagNode polyDag $ start polyDag
 
 -- Calculate the vertex vector, from halfspace indices.
 calculateVertex :: HsMap -> [HsKey] -> VU.Vector Double

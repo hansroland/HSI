@@ -4,14 +4,14 @@
 module Data.Graph.HSI.Face where
 
 import Data.Graph.HSI.Halfspace ( HsKey )
-import Data.Graph.HSI.RelHsPos ( RelHsPos )
+import Data.Graph.HSI.RelPos ( RelPos )
 import Data.Graph.Dag
 
 import Data.Vector.Unboxed (Vector)
 
 -- A Face is and vertex, edge, hyperplane or side of a polytope
-data Face = Edge !RelHsPos !Dim ![HsKey] !Visibility
-          | Vertex !RelHsPos !(Vector Double) ![HsKey]
+data Face = Edge !RelPos !Dim ![HsKey] !Visibility
+          | Vertex !RelPos !(Vector Double) ![HsKey]
      deriving (Show)
 
 -- Datatype to store the dimension of a face
@@ -34,13 +34,13 @@ mkVertex hsKeys v = Vertex mempty v hsKeys
 
 -- Add an new Halfspace index to a Face
 addHsKey :: Face -> HsKey -> Face
-addHsKey (Edge relHsPos dim keys vis) k = Edge relHsPos dim (k : keys) vis
+addHsKey (Edge relPos dim keys vis) k = Edge relPos dim (k : keys) vis
 addHsKey edge _ = edge
 
 -- Get the relative Halfspace position
-faceGetRelHsPos :: Face -> RelHsPos
-faceGetRelHsPos (Edge relHsPos _ _ _) = relHsPos
-faceGetRelHsPos (Vertex relHsPos _ _ ) = relHsPos
+faceGetRelPos :: Face -> RelPos
+faceGetRelPos (Edge relPos _ _ _) = relPos
+faceGetRelPos (Vertex relPos _ _ ) = relPos
 
 -- Get the List of the HsKeys
 faceHsKeys :: Face -> [HsKey]
@@ -58,7 +58,7 @@ faceVis (Edge _ _ _ vis) = vis
 
 faceSetVis :: Face -> Visibility -> Face
 faceSetVis v@(Vertex _ _ _) _ = v
-faceSetVis (Edge relHsPos dim hskeys  _) vis = Edge relHsPos dim hskeys vis
+faceSetVis (Edge relPos dim hskeys  _) vis = Edge relPos dim hskeys vis
 
 -- ----------------------------------------------------------------
 -- Face accessor function for nodes

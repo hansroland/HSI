@@ -57,7 +57,7 @@ library libhsi
     other-modules:
         Data.Graph.HSI.Halfspace,
         Data.Graph.HSI.Face,
-        Data.Graph.HSI.RelHsPos,
+        Data.Graph.HSI.RelPos,
         Data.Graph.HSI.Utils,
         Data.Graph.HSI.Init,
         Data.Graph.HSI.Visibility,

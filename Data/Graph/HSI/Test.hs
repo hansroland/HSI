@@ -9,18 +9,18 @@ module Data.Graph.HSI.Test (
     hsFromList,
     normalize,
     -- Face
-    faceGetRelHsPos,
+    faceGetRelPos,
     -- Polytope
     Polytope(..),
     polyInsertHalfspace,
-    polyRelHsPos,
+    polyRelPos,
     polyStats,
     checkFormulaEuler,
     visPoly,
     -- HSI Algorithm
     hsiStep,
-    relHsPosPoly,
-    wipeOutOnEdge,
+    relPosPoly,
+    wipeOut0,
     hsiIntersectHMin,
     hsiIntersectH0
 
@@ -29,7 +29,7 @@ module Data.Graph.HSI.Test (
 import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
-import Data.Graph.HSI.RelHsPos
+import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Init
 import Data.Graph.HSI.Algorithm
 import Data.Graph.HSI.Visibility
