@@ -23,9 +23,6 @@ module Data.Graph.Dag ( Dag(..), NodeKey, Node (..),
         preOrderMultipleFilter,
         preOrderSingleFilter,
         preOrderSingle,
-        --
-        -- Operation on NodeKeys
-        int2NodeKey,
         -- Operations on Nodes
         nodeAddKey,
         nodeAddKeys,

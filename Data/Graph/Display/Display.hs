@@ -85,7 +85,7 @@ getEdges dag =
 
 -- Make visible edges
 mkVisEdge :: Int -> Int -> IndexedEdge
-mkVisEdge k1 k2 = IndexedEdge (int2NodeKey  k1) (int2NodeKey k2) Visible
+mkVisEdge k1 k2 = IndexedEdge (fromIntegral  k1) (fromIntegral k2) Visible
 
 -- Convert a IndexedEdge to a Line
 segToLine :: PointMap -> IndexedEdge -> Line

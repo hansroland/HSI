@@ -11,10 +11,6 @@ newtype NodeKey = NodeKey Int
     deriving (Eq, Ord, Enum)
     deriving newtype (Read, Show, Num)
 
--- Convert an Int to a NodeKey
-int2NodeKey :: Int -> NodeKey
-int2NodeKey = NodeKey
-
 -- --------------------------------------------------------------
 -- Node
 -- --------------------------------------------------------------
