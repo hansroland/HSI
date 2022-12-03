@@ -6,13 +6,12 @@ module Data.Graph.HSI.RelPos
 (RelPos(),
 relPosP,  relPos0, relPosM,
 relPosP0, relPosM0,
-relPosMP, relPosM0P,
-wipeOut0
+relPosMP, relPosM0P
 )
 where
 
 import Data.Word ( Word8 )
-import Data.Bits ( Bits((.&.), (.|.)) )
+import Data.Bits ( Bits( (.|.) ) )
 
 -- The location of a point or edge relative to a Halfspace
 newtype RelPos = RelPos Word8
@@ -56,6 +55,3 @@ relPosMP = RelPos 0x50
 
 relPosM0P :: RelPos
 relPosM0P = RelPos 0x70
-
-wipeOut0 :: RelPos -> RelPos
-wipeOut0 (RelPos x) = RelPos ( x .&. 0x50)

@@ -20,7 +20,6 @@ module Data.Graph.HSI.Test (
     -- HSI Algorithm
     hsiStep,
     hsiRelPosPoly,
-    wipeOut0,
     hsiIntersectHMin,
     hsiIntersectH0
 
@@ -29,7 +28,6 @@ module Data.Graph.HSI.Test (
 import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
-import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Init
 import Data.Graph.HSI.Algorithm
 import Data.Graph.HSI.Visibility

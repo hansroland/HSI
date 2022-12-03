@@ -15,8 +15,8 @@ import qualified Data.EnumMap as Map
 import qualified Data.Set as Set
 
 import Data.Set (Set)
-import Data.List ( partition, (\\) )
-import Control.Monad.State.Strict ( State, unless, when )
+import Data.List ( (\\) )
+import Control.Monad.State.Strict ( State, unless )
 
 import Debug.Trace ( trace )
 
@@ -30,16 +30,14 @@ hsiStep poly hs = do
 
 
 checkRelHs :: RelPos -> Halfspace -> Polytope -> Either String Polytope
-checkRelHs relPos' hs0 poly0  = go (wipeOut0 relPos') hs0 poly0
-  where
-    go relPos hs poly
-      | relPos == mempty    = Left "Polytope is degraded"
-      | relPos == relPosM   = Left ("Polytope is empty" ++ show poly)
-      | relPos == relPosP    = pure poly
-      | relPos == relPosMP  =                 --TODO Check for M0P ??
+checkRelHs relPos hs poly
+      | relPos == relPos0  || relPos == relPosM0  = Left "Polytope is degraded"
+      | relPos == relPosM                         = Left ("Polytope is empty" ++ show poly)
+      | relPos == relPosP  || relPos == relPosP0  = pure poly   -- Halfspace is redundant
+      | relPos == relPosMP || relPos == relPosM0P =
         pure $ hsiIntersectH0
-          $ polyInsertHalfspace hs
-          $ hsiIntersectHMin poly
+             $ polyInsertHalfspace hs
+             $ hsiIntersectHMin poly
       | otherwise = Left ("checkRelHs got strange relPos:" ++ show relPos)
 
 -- Calculate the RelPos for a polytope
@@ -53,24 +51,16 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     relPosNode :: NodeFunction Face ()
     relPosNode (key, node) = do
       dag <- getDag
-      let (newKids, newFace)  = relPosFace node dag
-          newNode = Node {nodeKids = newKids, nodeData = newFace}
-      putDag $ dagUpdateNode dag key newNode
+      let newFace  = relPosFace node dag
+      putDag $ dagUpdateNode dag key node {nodeData = newFace}
     -- Calculate the relative position for a vertex
-    relPosFace :: Node Face -> Dag Face -> ([NodeKey], Face)
+    relPosFace :: Node Face -> Dag Face -> Face
     relPosFace Node{nodeData = Vertex _ vec hsKeys} _ =
-        ([], Vertex (calcRelPosVertex hs vec) vec hsKeys)
+        Vertex (calcRelPosVertex hs vec) vec hsKeys
     -- Calculate the relative position for a nonVertex
     relPosFace node@Node{nodeData = Edge _ dim hskeys vis} dag =
-        let pairsKeysRelpos = dagMapSubnodesKey (faceGetRelPos . nodeData) dag node
-            relPos = mconcat $ fmap snd pairsKeysRelpos
-            newKids = sortOnEdge pairsKeysRelpos
-        in  (newKids, Edge relPos dim hskeys vis)
-    -- Sort: Move the onEdge nodes at the beginning of the kids list
-    sortOnEdge :: [(NodeKey, RelPos)] -> [NodeKey]
-    sortOnEdge keysRelpos =
-      let (onEdgies, others) = partition ((relPos0 ==) . snd) keysRelpos
-      in  (fst <$> onEdgies) ++ (fst <$> others)
+        let relPos =  mconcat $ (faceGetRelPos . nodeData . dagNode dag) <$> nodeKids node
+        in  Edge relPos dim hskeys vis
     -- Calculate relPos for a Vertex
     calcRelPosVertex :: Halfspace -> VU.Vector Double -> RelPos
     calcRelPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
@@ -111,21 +101,13 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
     processNode :: HsMap -> NodeFunction Face ()
     processNode hsmap (key,node) = do
       dag <- getDag
-      let fstKey = head $ nodeKids node
+      unless (hasH0Kids dag node) $ do
           -- get grandchildren of parent that are in H0
-          grandKids = dagGrandNodes dag node
-          grandKidsKeys = fst <$>
-              filter (\gk -> relPos0 == faceGetRelPos (nodeData (snd gk) )) grandKids
-
-          fstNode = dagNode dag $ fstKey
-          fstNodeData = nodeData fstNode
-          relPos = faceGetRelPos $ nodeData node
-
-      -- TODO: Clean up this code, do we really need to check again for bothside or allside ??
-      unless (faceGetRelPos fstNodeData == relPos0) $ do
-          when (relPos == relPosMP || relPos == relPosM0P) $ do
-              newKey <- mkNewNode hsmap grandKidsKeys node
-              linkToParent newKey key
+          let grandKids = dagGrandNodes dag node
+              grandKidsKeys = fst <$>
+                filter (\gk -> relPos0 == faceGetRelPos (nodeData (snd gk) )) grandKids
+          newKey <- mkNewNode hsmap grandKidsKeys node
+          linkToParent newKey key
       pure ()
 
     -- Make new new Node with a face: insert it into the dag
@@ -140,7 +122,7 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
                          vec = mkVert hsKeys hsmap
                      in  ([], Vertex relPos0 vec hsKeys )
                 else let hsKeys = hskey : nodeHsKeys node
-                     in  (kids, Edge relPos0 (dim -1) hsKeys Hidden)   -- TODO Check relPos !!!
+                     in  (kids, Edge relPos0 (dim -1) hsKeys Hidden)
           newnode = node{ nodeKids = newSubs, nodeData = newFace}
           (newKey, dag1) = dagInsertNode newnode dag
       putDag dag1
@@ -167,3 +149,10 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
       let parentNode = dagNode dag parentKey
           updParent = nodeAddKey newSubkey parentNode
       putDag $ dagUpdateNode dag parentKey updParent
+
+    -- Has the node any kids in H0
+    hasH0Kids :: Dag Face -> Node Face -> Bool
+    hasH0Kids dag node =
+      let isH0Key :: NodeKey -> Bool
+          isH0Key = (== relPos0) . faceGetRelPos . nodeData . dagNode dag
+      in any isH0Key $ nodeKids node

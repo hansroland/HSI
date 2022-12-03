@@ -6,7 +6,7 @@
 module Data.Graph.Dag.Dag where
 
 import Prelude hiding (pred)
-import Data.Graph.Dag.Node
+import Data.Graph.Dag.Node ( NodeKey(..), Node(Node, nodeKids) )
 
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
@@ -39,28 +39,6 @@ dagNode dag key = (dagMap dag) Map.! key   -- TODO: Comment on missing keys
 -- Return the start node
 dagStartNode :: Dag n -> Node n
 dagStartNode dag = dagNode dag $ start dag
-
-{-
--- Return a list of all the subnodes of a node
-dagSubnodes :: Dag n -> Node n -> [Node n]
-dagSubnodes dag node = dagNode dag <$> nodeKids node
--}
-
-{-
--- Map a function over the subnodes of a node.
--- Return a list with the results.
-dagMapSubnodes :: (Node n -> b) -> Dag n -> Node n -> [b]
-dagMapSubnodes fun dag (Node{nodeKids}) =
-  let subnodes = dagNode dag <$> nodeKids
-  in  fun <$> subnodes
--}
-
--- Map a function over the subnodes of a node.
--- Return a list of pairs with NodeKey and function result of the key
-dagMapSubnodesKey :: (Node n -> b) -> Dag n -> Node n -> [(NodeKey, b)]
-dagMapSubnodesKey fun dag (Node{nodeKids}) =
-  let subnodes = dagNode dag <$> nodeKids
-  in  zip nodeKids (fun <$> subnodes)
 
 -- Initialize a DAG with the root node
 dagInit :: NodeKey -> Dag n
