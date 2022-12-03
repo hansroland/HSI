@@ -114,7 +114,7 @@ uiReadHss parms = do
             liftIO $ mapM_ putStrLn $ strHss
             putHss hss
           else do
-            liftIO $ putStrLn ("File " <> path <> "does not exist")
+            liftIO $ putStrLn ("File " <> path <> " does not exist")
 
 -- Run the HSI algoritm on the halfspaces into the halfspace store
 uiHsi :: (MonadState UiState m, MonadIO m) => m()
