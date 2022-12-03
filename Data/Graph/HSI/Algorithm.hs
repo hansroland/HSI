@@ -23,7 +23,7 @@ import Debug.Trace ( trace )
 -- Apply one single halfspace to the polytope
 hsiStep :: Polytope -> Halfspace -> Either String Polytope
 hsiStep poly hs = do
-  let poly1 = trace ("Process halfspace:" ++ show hs) $ relPosPoly hs poly
+  let poly1 = trace ("Process halfspace:" ++ show hs) $ hsiRelPosPoly hs poly
       dag = polyDag poly1
       relHs = faceGetRelPos $ nodeData $ dagNode dag $ start dag
   checkRelHs relHs hs poly1
@@ -43,42 +43,37 @@ checkRelHs relPos' hs0 poly0  = go (wipeOut0 relPos') hs0 poly0
       | otherwise = Left ("checkRelHs got strange relPos:" ++ show relPos)
 
 -- Calculate the RelPos for a polytope
--- TODO: Avoid preprocessing of the vertices, so we can save dagUpdateLeafs
-relPosPoly :: Halfspace -> Polytope -> Polytope
-relPosPoly hs poly@Polytope {polyDag = dag0 } =
+hsiRelPosPoly :: Halfspace -> Polytope -> Polytope
+hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     poly {polyDag = newDag }
   where
-    -- First process the leaves
-    dag1 = dagUpdateLeafs  (setHsPosLeaf hs) dag0
-    -- then process all the non-leaf faces
-    newDag = postOrderSingle relPosNode () dag1
+    newDag = postOrderSingle relPosNode () dag0
 
-    -- Set the newly calculated relPos to a vertex node
-    setHsPosLeaf :: Halfspace -> Face -> Face
-    setHsPosLeaf _ edge@(Edge _ _ _ _) = edge
-    setHsPosLeaf hs0 (Vertex _ vec hskeys) =
-      Vertex (relPosVertex hs0 vec) vec hskeys
     -- Calculate the relPos for a single node
     relPosNode :: NodeFunction Face ()
-    relPosNode (key, node@Node{nodeData = pLoad}) = do
+    relPosNode (key, node) = do
       dag <- getDag
-      let pairsKeysRelpos = dagMapSubnodesKey (faceGetRelPos . nodeData) dag node
-          relPos = mconcat $ fmap snd pairsKeysRelpos
-          newKids = sortOnEdge pairsKeysRelpos
-          newNode = node{nodeKids = newKids, nodeData = relPosEdge relPos pLoad}
+      let (newKids, newFace)  = relPosFace node dag
+          newNode = Node {nodeKids = newKids, nodeData = newFace}
       putDag $ dagUpdateNode dag key newNode
+    -- Calculate the relative position for a vertex
+    relPosFace :: Node Face -> Dag Face -> ([NodeKey], Face)
+    relPosFace Node{nodeData = Vertex _ vec hsKeys} _ =
+        ([], Vertex (calcRelPosVertex hs vec) vec hsKeys)
+    -- Calculate the relative position for a nonVertex
+    relPosFace node@Node{nodeData = Edge _ dim hskeys vis} dag =
+        let pairsKeysRelpos = dagMapSubnodesKey (faceGetRelPos . nodeData) dag node
+            relPos = mconcat $ fmap snd pairsKeysRelpos
+            newKids = sortOnEdge pairsKeysRelpos
+        in  (newKids, Edge relPos dim hskeys vis)
     -- Sort: Move the onEdge nodes at the beginning of the kids list
     sortOnEdge :: [(NodeKey, RelPos)] -> [NodeKey]
     sortOnEdge keysRelpos =
       let (onEdgies, others) = partition ((relPos0 ==) . snd) keysRelpos
       in  (fst <$> onEdgies) ++ (fst <$> others)
-    -- Set the relPos in a non vertex edge
-    relPosEdge :: RelPos -> Face -> Face
-    relPosEdge rpos (Edge _ dim hskeys vis) = Edge rpos dim hskeys vis
-    relPosEdge _ vertex@(Vertex _ _ _)       = vertex
     -- Calculate relPos for a Vertex
-    relPosVertex :: Halfspace -> VU.Vector Double -> RelPos
-    relPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
+    calcRelPosVertex :: Halfspace -> VU.Vector Double -> RelPos
+    calcRelPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
       where
         dotp = VU.sum $ VU.zipWith (*) (VU.init vs) vertex
         relPos :: Double -> RelPos
@@ -113,7 +108,6 @@ hsiIntersectH0 :: (HsKey, Polytope) -> Polytope
 hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
   where
     newDag = postOrderMultipleFilter (processNode  polyHs) isToProcess () polyDag
-
     processNode :: HsMap -> NodeFunction Face ()
     processNode hsmap (key,node) = do
       dag <- getDag

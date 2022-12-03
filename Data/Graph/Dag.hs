@@ -16,10 +16,7 @@ module Data.Graph.Dag ( Dag(..), NodeKey, Node (..),
         dagUpdateNode,
         dagInsertNode,
         -- Dag processing
-        -- dagSubnodes,
-        -- dagMapSubnodes,
         dagMapSubnodesKey,
-
         postOrderSingle,
         postOrderSingleFilter,
         postOrderMultiple,
@@ -28,8 +25,6 @@ module Data.Graph.Dag ( Dag(..), NodeKey, Node (..),
         preOrderSingleFilter,
         preOrderSingle,
         --
-        dagUpdateLeafs,
-        dagFilterLeafs,
         -- Operation on NodeKeys
         int2NodeKey,
         -- Operations on Nodes

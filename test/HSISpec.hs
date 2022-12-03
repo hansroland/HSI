@@ -33,17 +33,17 @@ hs3 =  hsFromList  [0,0,1, -10]
 -- Show the relative position of the whole polytope
 -- The polytope is the triangle
 showRelPosPoly :: Halfspace -> String
-showRelPosPoly hs = show $ polyRelPos $ relPosPoly hs mkTriangle
+showRelPosPoly hs = show $ polyRelPos $ hsiRelPosPoly hs mkTriangle
 
 -- Show the Dag with only the remaining inside nodes
 -- The polytope is the triangle
 showInsideHsDag2dim :: Halfspace -> String
-showInsideHsDag2dim hs = show $ polyDag $ hsiIntersectHMin $ relPosPoly hs mkTriangle
+showInsideHsDag2dim hs = show $ polyDag $ hsiIntersectHMin $ hsiRelPosPoly hs mkTriangle
 
 -- Show the Dag with only the remaining inside nodes
 -- The polytope is the pyramide
 showInsideHsDag3dim :: Halfspace -> String
-showInsideHsDag3dim hs = show $ polyDag $ hsiIntersectHMin $ relPosPoly hs mkPyramid
+showInsideHsDag3dim hs = show $ polyDag $ hsiIntersectHMin $ hsiRelPosPoly hs mkPyramid
 
 showDagAfterHsiStep :: Halfspace -> String
 showDagAfterHsiStep hs = show $ polyDag <$> hsiStep mkPyramid hs

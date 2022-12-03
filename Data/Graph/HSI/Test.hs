@@ -19,7 +19,7 @@ module Data.Graph.HSI.Test (
     visPoly,
     -- HSI Algorithm
     hsiStep,
-    relPosPoly,
+    hsiRelPosPoly,
     wipeOut0,
     hsiIntersectHMin,
     hsiIntersectH0

@@ -93,24 +93,9 @@ dagGrandNodes dag node =
       grandnodes = dagNode dag <$> grandkeys
   in zip grandkeys grandnodes
 
--- Return the associations (NodeKey, Node) of all the nosdes
+-- Return the associations (NodeKey, Node) of all the nodes
 dagNodeAssocs :: Dag n -> [(NodeKey, Node n)]
 dagNodeAssocs = Map.toAscList . dagMap
-
--- ---------------------------------------------------------------------------
--- Leaf Processing
--- ---------------------------------------------------------------------------
--- filter all leafs from a Dag    -- TODO  remove this, use dagNodeAssocs
-dagFilterLeafs :: Dag n -> [(NodeKey, Node n)]
-dagFilterLeafs = filter (isLeaf . snd) . Map.toAscList . dagMap
-
-dagUpdateLeafs:: (n -> n) -> Dag n -> Dag n
-dagUpdateLeafs fun dag = dagUpdateAssocs newassocs dag
-  where
-    newassocs = fmap  (nodeUpdateDataWith fun) <$> dagFilterLeafs dag
-    dagUpdateAssocs :: [(NodeKey, Node n)] -> Dag n -> Dag n
-    dagUpdateAssocs assocs dag0 = foldl ins dag0 assocs
-    ins dag1 (key,node) = dagUpdateNode dag1 key node
 
 -- ---------------------------------------------------------------------------
 -- DagAlgoData
