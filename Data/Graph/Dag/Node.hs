@@ -16,7 +16,7 @@ newtype NodeKey = NodeKey Int
 -- --------------------------------------------------------------
 -- A Node is a list of sub nodes and some data
 data Node a = Node {nodeKids :: ![NodeKey], nodeData :: !a}
-     deriving (Functor)
+    deriving (Functor)
 
 instance Show a => Show (Node a) where
     show Node {nodeKids, nodeData} =

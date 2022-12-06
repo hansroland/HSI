@@ -13,7 +13,7 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.EnumMap.Strict as Map
 
 
--- ATTENTION: The HsiKeys to the Edges start with 2!!
+-- ATTENTION: The HsiKeys to the Faces start with 2!!
 
 sqrt2 :: Double
 sqrt2 = sqrt 2
@@ -33,24 +33,24 @@ mkPyramid = Polytope { polyHs = hsPyramid, polyDag = mkPyramidDag }
 
 -- Create the graph structure for the Pyramid
 mkPyramidDag :: Dag Face
-mkPyramidDag = addEdge 1 [2,3,4,5,6] 3 []
+mkPyramidDag = addNonvert 1 [2,3,4,5,6] 3 []
      -- dummy for debugging
-     -- $ addEdge 100 [100] 3 []
+     -- $ addNonvert 100 [100] 3 []
      -- 2-dim faces
-     $ addEdge 2 [ 7,  8,  9]     2 [2]
-     $ addEdge 3 [ 7, 10, 13]     2 [3]
-     $ addEdge 4 [ 9, 10, 11, 12] 2 [1]  -- base
-     $ addEdge 5 [ 8, 11, 14]     2 [5]
-     $ addEdge 6 [12, 13, 14]     2 [4]
+     $ addNonvert 2 [ 7,  8,  9]     2 [2]
+     $ addNonvert 3 [ 7, 10, 13]     2 [3]
+     $ addNonvert 4 [ 9, 10, 11, 12] 2 [1]  -- base
+     $ addNonvert 5 [ 8, 11, 14]     2 [5]
+     $ addNonvert 6 [12, 13, 14]     2 [4]
      -- 1-dim faces
-     $ addEdge 7 [15, 17]         1 [2,3]
-     $ addEdge 8 [16,17]          1 [2,5]
-     $ addEdge 9 [15,16]          1 [1,2]
-     $ addEdge 10 [15,18]         1 [1,3]
-     $ addEdge 11 [16,19]         1 [1,5]
-     $ addEdge 12 [18,19]         1 [1,4]
-     $ addEdge 13 [17,18]         1 [3,4]
-     $ addEdge 14 [17,19]         1 [5,4]
+     $ addNonvert 7 [15, 17]         1 [2,3]
+     $ addNonvert 8 [16,17]          1 [2,5]
+     $ addNonvert 9 [15,16]          1 [1,2]
+     $ addNonvert 10 [15,18]         1 [1,3]
+     $ addNonvert 11 [16,19]         1 [1,5]
+     $ addNonvert 12 [18,19]         1 [1,4]
+     $ addNonvert 13 [17,18]         1 [3,4]
+     $ addNonvert 14 [17,19]         1 [5,4]
      -- Vertices
      -- TODO: Remove hs from vertex data structure or add correct data !!
      $ addVertex 15 [1,2,3] [ 300.0,  300.0,  -100.0]
@@ -80,10 +80,10 @@ mkTriangle = Polytope { polyHs = hsTri, polyDag = mkTriangleDag }
 
 -- Create the graph structure for a Triangle
 mkTriangleDag :: Dag Face
-mkTriangleDag =  addEdge 1 [2,3,4] 2 []
-     $ addEdge 2 [5,6] 1 [2]
-     $ addEdge 3 [5,7] 1 [3]
-     $ addEdge 4 [7,6] 1 [4]
+mkTriangleDag =  addNonvert 1 [2,3,4] 2 []
+     $ addNonvert 2 [5,6] 1 [2]
+     $ addNonvert 3 [5,7] 1 [3]
+     $ addNonvert 4 [7,6] 1 [4]
      $ addVertex 5 [2,3] [ 0,  2]
      $ addVertex 6 [2,4] [-4, -2]
      $ addVertex 7 [3,4] [ 4, -2]
@@ -100,9 +100,9 @@ hsTri = Map.fromAscList $ zip [2..] hsList
 -- ---------------------------------------------------------------------------
 -- Local helper function to add nodes
 -- ----------------------------------------------------------------------------
-addEdge :: NodeKey -> [NodeKey] -> Dim -> [HsKey]  -> Dag Face -> Dag Face
-addEdge nodeKey subKeys dim hsKeys dag =
-     let face = Edge mempty dim hsKeys Hidden
+addNonvert :: NodeKey -> [NodeKey] -> Dim -> [HsKey]  -> Dag Face -> Dag Face
+addNonvert nodeKey subKeys dim hsKeys dag =
+     let face = Nonvert mempty dim hsKeys Hidden
          node = Node {nodeKids = subKeys, nodeData = face}
      in  dagUpdateNode dag nodeKey node
 

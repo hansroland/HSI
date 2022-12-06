@@ -58,9 +58,9 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     relPosFace Node{nodeData = Vertex _ vec hsKeys} _ =
         Vertex (calcRelPosVertex hs vec) vec hsKeys
     -- Calculate the relative position for a nonVertex
-    relPosFace node@Node{nodeData = Edge _ dim hskeys vis} dag =
+    relPosFace node@Node{nodeData = Nonvert _ dim hskeys vis} dag =
         let relPos =  mconcat $ (faceGetRelPos . nodeData . dagNode dag) <$> nodeKids node
-        in  Edge relPos dim hskeys vis
+        in  Nonvert relPos dim hskeys vis
     -- Calculate relPos for a Vertex
     calcRelPosVertex :: Halfspace -> VU.Vector Double -> RelPos
     calcRelPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
@@ -122,7 +122,7 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
                          vec = mkVert hsKeys hsmap
                      in  ([], Vertex relPos0 vec hsKeys )
                 else let hsKeys = hskey : nodeHsKeys node
-                     in  (kids, Edge relPos0 (dim -1) hsKeys Hidden)
+                     in  (kids, Nonvert relPos0 (dim -1) hsKeys Hidden)
           newnode = node{ nodeKids = newSubs, nodeData = newFace}
           (newKey, dag1) = dagInsertNode newnode dag
       putDag dag1
