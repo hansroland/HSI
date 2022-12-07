@@ -51,6 +51,7 @@ library libhsi
         Data.Graph.Display.DispParams,
         Data.Graph.Display.Point2,
         Data.Graph.HSI.Polytope,
+        Data.Graph.HSI.InitCube,
         Data.Graph.HSI.Algorithm
 
     -- Modules included in this library but not exported.
@@ -60,6 +61,7 @@ library libhsi
         Data.Graph.HSI.RelPos,
         Data.Graph.HSI.Utils,
         Data.Graph.HSI.Init,
+
         Data.Graph.HSI.Visibility,
         Data.Graph.Dag,
         Data.Graph.Dag.Dag,
