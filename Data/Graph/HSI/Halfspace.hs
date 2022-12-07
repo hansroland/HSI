@@ -15,7 +15,7 @@ newtype Halfspace = Halfspace (Vector Double)
 -- Datatype to store the keys / indexes of Halfspaces in an IntMap.
 newtype HsKey = HsKey Int
     deriving (Eq, Ord, Num)
-    deriving newtype (Read, Show, Enum)
+    deriving newtype (Read, Show, Enum, Real, Integral)
 
 -- Create a Halfspace from a list of doubles.
 -- Checking the length of the list is the task of the input program
