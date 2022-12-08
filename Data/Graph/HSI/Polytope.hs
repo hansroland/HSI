@@ -9,8 +9,6 @@ import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Utils
-
-
 import Data.Graph.Dag
 
 import Data.EnumMap.Strict(EnumMap)
@@ -19,6 +17,7 @@ import qualified Data.EnumMap.Strict as Map
 import Data.Matrix
 import qualified Data.Vector.Unboxed as VU
 import Data.Maybe (fromMaybe)
+import Data.List ( sortBy )
 
 
 type HsMap = EnumMap HsKey Halfspace
@@ -27,17 +26,22 @@ type HsMap = EnumMap HsKey Halfspace
 data Polytope = Polytope { polyHs :: HsMap, polyDag :: Dag Face}
     -- deriving (Show)
 
--- Get the Halfspace with the given HsKey.
-getHalfSpace :: HsMap -> HsKey -> Halfspace
-getHalfSpace hsmap hskey = hsmap Map.! hskey
-
 instance Show Polytope where
-  show Polytope {polyHs, polyDag}  =
-       concat ("Halfspaces" : nl : map showassoc (Map.toAscList polyHs))
-       ++ show polyDag
+  show poly@Polytope {polyHs}  =
+       concat ("Halfspaces" : nl : map showHsAssoc (Map.toAscList polyHs)) ++
+       concat ("Faces" : (map showNodeAssoc $ sortNodeAssoc $ polyNodeAssocs poly ))
     where
-        showassoc ::  (HsKey, Halfspace) -> String
-        showassoc (key, hs) = show key ++ " -> " ++ show hs ++ nl
+        showHsAssoc ::  (HsKey, Halfspace) -> String
+        showHsAssoc (key, hs) = show key ++ " -> " ++ show hs ++ nl
+        showNodeAssoc :: (NodeKey, Node Face) -> String
+        showNodeAssoc (k,n) =  '\n' : show k ++ "=>" ++ show n
+        sortNodeAssoc :: [(NodeKey, Node Face)] -> [(NodeKey, Node Face)]
+        sortNodeAssoc = sortBy cmpNode
+        cmpNode :: (NodeKey, Node Face) -> (NodeKey, Node Face) -> Ordering
+        cmpNode (k1,n1) (k2,n2)
+          | nodeDim n1 > nodeDim n2 = LT
+          | nodeDim n1 < nodeDim n2 = GT
+          | otherwise = compare k1 k2
         nl = ['\n']
 
 -- Return all the node assocs [(NodeKey, Node Face)]
@@ -62,7 +66,7 @@ polyInsertHalfspace hs poly@Polytope {polyHs} =
 
 -- Map a list of HsKeys to something
 mapHs :: (Halfspace -> b) -> HsMap -> [HsKey] -> [b]
-mapHs hsFun hsmap keys = map (hsFun . getHalfSpace hsmap) keys
+mapHs hsFun hsmap keys = (hsFun . (hsmap Map.!)) <$> keys
 
 -- Get the relative halfspace position of a polytope
 polyRelPos :: Polytope -> RelPos
@@ -80,7 +84,6 @@ calculateVertex hsmap keys =
         -- round and unbox the last column
         eiVertex = asUnboxed . roundVector <$> (getCol <$> lastCol <*> echelon)
     in fromRight eiVertex
-
 
 -- Return the number of faces for each Dimension
 polyStats :: Polytope -> EnumMap Dim Int
