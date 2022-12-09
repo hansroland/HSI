@@ -1,8 +1,8 @@
 module Data.Graph.HSI.InitCube (mkCube) where
 
 import Data.Graph.Dag
-import Data.Graph.HSI.Face ( Visibility(Hidden), Face(..), Dim(..) )
-import Data.Graph.HSI.Halfspace ( HsKey, hsFromList, Halfspace )
+import Data.Graph.HSI.Face ( Visibility(Hidden), Face(..) )
+import Data.Graph.HSI.Halfspace ( HsKey, hsFromList, Halfspace, Dim(..) )
 import Data.Graph.HSI.Polytope ( Polytope(..) )
 
 import Data.List ( elemIndices )

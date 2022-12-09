@@ -5,7 +5,7 @@ module Data.Graph.HSI.Init (mkPyramid, mkTriangle)
 
 import Data.Graph.Dag
 import Data.Graph.HSI.Face
-import Data.Graph.HSI.Halfspace ( HsKey(..), hsFromList, normalize )
+import Data.Graph.HSI.Halfspace ( HsKey(..), Dim(..), hsFromList, normalize )
 import Data.Graph.HSI.Polytope
 
 import qualified Data.Vector.Unboxed as VU

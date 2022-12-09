@@ -3,7 +3,7 @@
 
 module Data.Graph.HSI.Face where
 
-import Data.Graph.HSI.Halfspace ( HsKey )
+import Data.Graph.HSI.Halfspace ( HsKey, Dim )
 import Data.Graph.HSI.RelPos ( RelPos )
 import Data.Graph.Dag
 
@@ -13,11 +13,6 @@ import Data.Vector.Unboxed (Vector)
 data Face = Nonvert !RelPos !Dim ![HsKey] !Visibility
           | Vertex !RelPos !(Vector Double) ![HsKey]
      deriving (Show)
-
--- Datatype to store the dimension of a face
-newtype Dim = Dim Int
-    deriving (Eq, Ord, Num, Enum)
-    deriving newtype (Show)
 
 -- Datatype for visibility of faces
 data Visibility = Visible | Hidden

@@ -12,6 +12,11 @@ import qualified Data.Vector.Unboxed as VU
 newtype Halfspace = Halfspace (Vector Double)
     deriving (Show)
 
+-- Datatype to store the dimension of a geometric object
+newtype Dim = Dim Int
+    deriving (Eq, Ord, Num, Enum)
+    deriving newtype (Show)
+
 -- Datatype to store the keys / indexes of Halfspaces in an IntMap.
 newtype HsKey = HsKey Int
     deriving (Eq, Ord, Num)
@@ -30,7 +35,7 @@ hsEquation (Halfspace vs) = vs
 toVector :: Halfspace -> Vector Double
 toVector (Halfspace vs) = vs
 
--- normalize the vector of a Halfspace
+-- Normalize the vector of a Halfspace
 normalize :: Halfspace -> Halfspace
 normalize (Halfspace vs) =
     let ivs = VU.init vs
@@ -38,8 +43,13 @@ normalize (Halfspace vs) =
         norm = VU.map (/ d) ivs
     in Halfspace $ VU.snoc norm $ VU.last vs
 
+-- Distance of a Point from a halfspace
 distance :: Halfspace -> Vector Double -> Double
 distance hs point =
     let hsv = toVector $ normalize hs
         dotp = VU.sum $ VU.zipWith (*) (VU.init hsv) point
     in  dotp - VU.last point
+
+-- Dimension of a halfspace
+hsDim :: Halfspace -> Dim
+hsDim (Halfspace v) = Dim (VU.length v) -1
