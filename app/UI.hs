@@ -12,6 +12,7 @@ import Data.Graph.Display.Point2
 
 import Data.Graph.HSI.Algorithm
 import Data.Graph.HSI.Polytope
+import Data.Graph.HSI.InitCube
 import Data.Graph.Display.Display (display)
 
 import Validation (Validation (..))
@@ -24,21 +25,21 @@ import System.Directory
 import System.IO
 
 import qualified Data.Vector.Unboxed as VU
+-- import Data.Graph.HSI (mkPyramid)
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
 data UiState = UiState {
-    uiPoly :: Polytope,
+    uiPoly :: HsiPolytope,
     uiDparms :: DispParams,
     uiHss     :: [Halfspace]
     }
 
--- Modify the Polytope in the UiState with a Polytope -> Polytope function.
-modifyPoly :: MonadState UiState m => (Polytope -> Polytope) -> m ()
-modifyPoly f = modify' $ modPoly f
-  where
-    modPoly :: (Polytope -> Polytope) -> UiState -> UiState
-    modPoly f' uiState = uiState {uiPoly = f' (uiPoly uiState)}
+-- Store a new poly into the UiState
+putPoly :: MonadState UiState m => HsiPolytope -> m ()
+putPoly newpoly = do
+  uiState <- get
+  put $ uiState {uiPoly = newpoly}
 
 -- Store new Halfspace data
 putHss :: MonadState UiState m => [Halfspace] -> m ()
@@ -54,7 +55,7 @@ putDparm dparms = do
 
 -- Initialize the application state
 uiInitState :: UiState
-uiInitState = UiState { uiPoly = mkPyramid, uiHss = [], uiDparms = dpInit}
+uiInitState = UiState { uiPoly = mkCube 3, uiHss = [], uiDparms = dpInit}
 
 
 uiLoop :: StateT UiState IO ()
@@ -87,6 +88,7 @@ uiCommands cmd params = do
       "draw"  -> uiDisplay
       "dim"   -> uiDim params
       "pdir"  -> uiPdir params
+      "list"  -> uiList
       _       -> liftIO $ putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
 
@@ -116,22 +118,31 @@ uiReadHss parms = do
           else do
             liftIO $ putStrLn ("File " <> path <> " does not exist")
 
--- Run the HSI algoritm on the halfspaces into the halfspace store
+-- Run the HSI algorithm on the halfspaces into the halfspace store
 uiHsi :: (MonadState UiState m, MonadIO m) => m()
 uiHsi = do
   hslist <- gets uiHss
-  let rslt = foldlM hsiStep mkPyramid hslist
+  poly0 <- gets uiPoly
+  let rslt = foldlM hsiStep poly0 hslist
   case rslt of
     (Left msg)   -> liftIO $ putStrLn msg
     (Right poly) -> do
       -- let poly = polyShowPreorder poly0
-      liftIO $ putStrLn $ show poly
       liftIO $ putStrLn $ show $ polyStats poly
       liftIO $ putStrLn $ show $ checkFormulaEuler poly
       -- liftIO $ putStrLn $ show $ getVertMap poly
       -- update state: remove halfspaces, add polytope
       putHss []
-      modifyPoly $ const poly
+      putPoly poly
+
+-- List the current polytope in the UI State
+uiList :: (MonadState UiState m, MonadIO m) => m()
+uiList = do
+    poly <- gets uiPoly
+    liftIO $ putStrLn $ show poly
+    liftIO $ putStrLn $ show $ polyStats poly
+    liftIO $ putStrLn $ show $ checkFormulaEuler poly
+
 
 -- Reset the application state
 -- Reset the polytope and the halfspace store
@@ -139,14 +150,15 @@ uiClear ::  (MonadState UiState m) => m()
 uiClear = get >>= uiReset
   where
     uiReset :: (MonadState UiState m) => UiState -> m()
-    uiReset uiState = put $ uiState{ uiPoly = mkPyramid, uiHss = [] }
+    uiReset uiState = put $ uiState{ uiPoly = (mkCube 3), uiHss = [] }
 
 -- Display the current polytope with the current display parameters
 uiDisplay :: (MonadState UiState m, MonadIO m) => m()
 uiDisplay = do
-  dparms <- gets uiDparms
-  poly   <- gets uiPoly
-  liftIO $ display dparms poly
+    dparms <- gets uiDparms
+    poly   <- gets uiPoly
+    -- Transform a HsiPolytope into a VisPolytope
+    liftIO $ display dparms $ polyHsi2Vis poly
 
 -- Process the `dim` input
 uiDim :: (MonadState UiState m, MonadIO m) => [String] -> m()
@@ -165,6 +177,9 @@ uiPdir inps = updateIfValid fupd $ validatePdir inps
     validatePdir toks = validateReads toks <* (validateLength "pdir" 3 toks)
     fupd :: ([Double] -> DispParams -> DispParams)
     fupd = dpSetPdir . VU.fromList
+
+-- Validate halfspaces: Are there any halfspaces and have all the same dimension
+-- validateHss
 
 -- ---------------------------------------------------------------------------------
 -- General validation functions

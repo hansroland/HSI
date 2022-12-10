@@ -8,8 +8,6 @@ module Data.Graph.HSI.Test (
     Halfspace(..),
     hsFromList,
     normalize,
-    -- Face
-    faceGetRelPos,
     -- Polytope
     Polytope(..),
     polyInsertHalfspace,
@@ -27,7 +25,6 @@ module Data.Graph.HSI.Test (
 
 import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.Halfspace
-import Data.Graph.HSI.Face
 import Data.Graph.HSI.Init
 import Data.Graph.HSI.Algorithm
 import Data.Graph.HSI.Visibility

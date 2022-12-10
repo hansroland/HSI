@@ -38,7 +38,7 @@ type VertMap = EnumMap NodeKey (Vector Double)
 type PointMap = EnumMap NodeKey P2
 
 -- Display a polytope
-display :: DispParams -> Polytope -> IO ()
+display :: DispParams -> VisPolytope -> IO ()
 display dparms poly = do
     let dim = dpDim dparms
         pdir = dpPdir dparms
@@ -49,7 +49,7 @@ display dparms poly = do
 
 
 -- Create from the DAG aDrawObj
-mkDrawObj :: DispParams -> Dag Face -> DrawObj
+mkDrawObj :: DispParams -> VisDag -> DrawObj
 mkDrawObj dparms dag =
     let pdir = dpPdir dparms
         -- calculate the rotation matrix
@@ -60,27 +60,27 @@ mkDrawObj dparms dag =
 
 -- Return an [Enum]Map with the 3-d vectors transfered with the diplay transformation of the vertices
 -- Use NodeKey as key.
-getVertMap :: Dag Face -> VertMap
+getVertMap :: VisDag -> VertMap
 getVertMap dag =
     let getVec :: Face -> Vector Double
-        getVec (Vertex _ vec _) = vec
+        getVec (Vertex vec _) = vec
         getVec _ = error "Severe error in Display.hs:getVertMap" --we use `isVertex`
         vertexAssocs = filter (isVertex . nodeData. snd) $ dagNodeAssocs dag
         rotVertAssocs = (fmap (getVec . nodeData)) <$> vertexAssocs
     in  Map.fromList rotVertAssocs
 
 -- Create the edges to draw
-getEdges :: Dag Face -> [IndexedEdge]
+getEdges :: VisDag -> [IndexedEdge]
 getEdges dag =
-    let node2seg :: Node Face -> IndexedEdge
+    let node2seg :: VisNode -> IndexedEdge
         node2seg node =
             let kids = nodeKids node
             in  IndexedEdge {
                   segKey1 = Prelude.head kids,
                   segKey2 = Prelude.last kids,
-                  segVis  = nodeVis node
+                  segVis  = nodeAttr node
                   }
-    in  fmap node2seg $ filter (\n -> nodeDim n == 1) $ Map.elems $ dagMap dag
+    in  fmap node2seg $ filter (\n -> nodeDim n == 1) $ Map.elems $ dagNodes dag
 
 
 -- Make visible edges

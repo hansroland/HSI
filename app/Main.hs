@@ -10,8 +10,6 @@ main = do
    _ <- execStateT uiLoop uiInitState
    return ()
 
-
-
 cut_base :: [Halfspace]
 cut_base = hsFromList <$> [[0,0,1, 50] ]
 cut_top :: [Halfspace]

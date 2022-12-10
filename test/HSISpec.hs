@@ -50,42 +50,42 @@ showDagAfterHsiStep hs = show $ polyDag <$> hsiStep mkPyramid hs
 
 inside_nodes_10 :: String
 inside_nodes_10 = "DAG start = 1\n" ++
-    "1 => [2,3] Nonvert relPosMP 2 [] Hidden\n" ++
-    "2 => [5] Nonvert relPosMP 1 [2] Hidden\n" ++
-    "3 => [5] Nonvert relPosMP 1 [3] Hidden\n" ++
-    "5 => [] Vertex relPosP [0.0,2.0] [2,3]\n"
+    "1 => [2,3] Nonvert 2 []  relPosMP\n" ++
+    "2 => [5] Nonvert 1 [2]  relPosMP\n" ++
+    "3 => [5] Nonvert 1 [3]  relPosMP\n" ++
+    "5 => [] Vertex [0.0,2.0] [2,3]  relPosP\n"
 
 inside_nodes_30 :: String
 inside_nodes_30 = "DAG start = 1\n" ++
-    "1 => [2,3,5,6] Nonvert relPosMP 3 [] Hidden\n" ++
-    "2 => [7,8] Nonvert relPosMP 2 [2] Hidden\n" ++
-    "3 => [7,13] Nonvert relPosMP 2 [3] Hidden\n" ++
-    "5 => [8,14] Nonvert relPosMP 2 [5] Hidden\n" ++
-    "6 => [13,14] Nonvert relPosMP 2 [4] Hidden\n" ++
-    "7 => [17] Nonvert relPosMP 1 [2,3] Hidden\n" ++
-    "8 => [17] Nonvert relPosMP 1 [2,5] Hidden\n" ++
-    "13 => [17] Nonvert relPosMP 1 [3,4] Hidden\n" ++
-    "14 => [17] Nonvert relPosMP 1 [5,4] Hidden\n" ++
-    "17 => [] Vertex relPosP [0.0,0.0,200.0] [2,3,4,5]\n"
+    "1 => [2,3,5,6] Nonvert 3 []  relPosMP\n" ++
+    "2 => [7,8] Nonvert 2 [2]  relPosMP\n" ++
+    "3 => [7,13] Nonvert 2 [3]  relPosMP\n" ++
+    "5 => [8,14] Nonvert 2 [5]  relPosMP\n" ++
+    "6 => [13,14] Nonvert 2 [4]  relPosMP\n" ++
+    "7 => [17] Nonvert 1 [2,3]  relPosMP\n" ++
+    "8 => [17] Nonvert 1 [2,5]  relPosMP\n" ++
+    "13 => [17] Nonvert 1 [3,4]  relPosMP\n" ++
+    "14 => [17] Nonvert 1 [5,4]  relPosMP\n" ++
+    "17 => [] Vertex [0.0,0.0,200.0] [2,3,4,5]  relPosP\n"
 
 dag_after_step_50 :: String
 dag_after_step_50 = "Right DAG start = 1\n" ++
-    "1 => [26,2,3,5,6] Nonvert relPosMP 3 [] Hidden\n" ++
-    "2 => [20,7,8] Nonvert relPosMP 2 [2] Hidden\n" ++
-    "3 => [22,7,13] Nonvert relPosMP 2 [3] Hidden\n" ++
-    "5 => [24,8,14] Nonvert relPosMP 2 [5] Hidden\n" ++
-    "6 => [25,13,14] Nonvert relPosMP 2 [4] Hidden\n" ++
-    "7 => [18,17] Nonvert relPosMP 1 [2,3] Hidden\n" ++
-    "8 => [19,17] Nonvert relPosMP 1 [2,5] Hidden\n" ++
-    "13 => [21,17] Nonvert relPosMP 1 [3,4] Hidden\n" ++
-    "14 => [23,17] Nonvert relPosMP 1 [5,4] Hidden\n" ++
-    "17 => [] Vertex relPosP [0.0,0.0,200.0] [2,3,4,5]\n" ++
-    "18 => [] Vertex relPos0 [210.0,210.0,-10.0] [2,3,6]\n" ++
-    "19 => [] Vertex relPos0 [-210.0,210.0,-10.0] [2,5,6]\n" ++
-    "20 => [18,19] Nonvert relPos0 1 [6,2] Hidden\n" ++
-    "21 => [] Vertex relPos0 [210.0,-210.0,-10.0] [3,4,6]\n" ++
-    "22 => [18,21] Nonvert relPos0 1 [6,3] Hidden\n" ++
-    "23 => [] Vertex relPos0 [-210.0,-210.0,-10.0] [5,4,6]\n" ++
-    "24 => [19,23] Nonvert relPos0 1 [6,5] Hidden\n" ++
-    "25 => [21,23] Nonvert relPos0 1 [6,4] Hidden\n" ++
-    "26 => [20,22,24,25] Nonvert relPos0 2 [6] Hidden\n"
+    "1 => [26,2,3,5,6] Nonvert 3 []  relPosMP\n" ++
+    "2 => [20,7,8] Nonvert 2 [2]  relPosMP\n" ++
+    "3 => [22,7,13] Nonvert 2 [3]  relPosMP\n" ++
+    "5 => [24,8,14] Nonvert 2 [5]  relPosMP\n" ++
+    "6 => [25,13,14] Nonvert 2 [4]  relPosMP\n" ++
+    "7 => [18,17] Nonvert 1 [2,3]  relPosMP\n" ++
+    "8 => [19,17] Nonvert 1 [2,5]  relPosMP\n" ++
+    "13 => [21,17] Nonvert 1 [3,4]  relPosMP\n" ++
+    "14 => [23,17] Nonvert 1 [5,4]  relPosMP\n" ++
+    "17 => [] Vertex [0.0,0.0,200.0] [2,3,4,5]  relPosP\n" ++
+    "18 => [] Vertex [210.0,210.0,-10.0] [2,3,6]  relPos0\n" ++
+    "19 => [] Vertex [-210.0,210.0,-10.0] [2,5,6]  relPos0\n" ++
+    "20 => [18,19] Nonvert 1 [6,2]  relPos0\n" ++
+    "21 => [] Vertex [210.0,-210.0,-10.0] [3,4,6]  relPos0\n" ++
+    "22 => [18,21] Nonvert 1 [6,3]  relPos0\n" ++
+    "23 => [] Vertex [-210.0,-210.0,-10.0] [5,4,6]  relPos0\n" ++
+    "24 => [19,23] Nonvert 1 [6,5]  relPos0\n" ++
+    "25 => [21,23] Nonvert 1 [6,4]  relPos0\n" ++
+    "26 => [20,22,24,25] Nonvert 2 [6]  relPos0\n"

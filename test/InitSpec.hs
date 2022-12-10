@@ -14,10 +14,10 @@ spec = do
 
 triangle1_print :: String
 triangle1_print = "DAG start = 1\n" ++
-    "1 => [2,3,4] Nonvert empty 2 [] Hidden\n" ++
-    "2 => [5,6] Nonvert empty 1 [2] Hidden\n" ++
-    "3 => [5,7] Nonvert empty 1 [3] Hidden\n" ++
-    "4 => [7,6] Nonvert empty 1 [4] Hidden\n" ++
-    "5 => [] Vertex empty [0.0,2.0] [2,3]\n" ++
-    "6 => [] Vertex empty [-4.0,-2.0] [2,4]\n" ++
-    "7 => [] Vertex empty [4.0,-2.0] [3,4]\n"
+    "1 => [2,3,4] Nonvert 2 []  empty\n" ++
+    "2 => [5,6] Nonvert 1 [2]  empty\n" ++
+    "3 => [5,7] Nonvert 1 [3]  empty\n" ++
+    "4 => [7,6] Nonvert 1 [4]  empty\n" ++
+    "5 => [] Vertex [0.0,2.0] [2,3]  empty\n" ++
+    "6 => [] Vertex [-4.0,-2.0] [2,4]  empty\n" ++
+    "7 => [] Vertex [4.0,-2.0] [3,4]  empty\n"

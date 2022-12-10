@@ -1,9 +1,9 @@
 module Data.Graph.HSI.InitCube (mkCube) where
 
 import Data.Graph.Dag
-import Data.Graph.HSI.Face ( Visibility(Hidden), Face(..) )
+import Data.Graph.HSI.Face ( Face(..), HsiNode, HsiDag )
 import Data.Graph.HSI.Halfspace ( HsKey, hsFromList, Halfspace, Dim(..) )
-import Data.Graph.HSI.Polytope ( Polytope(..) )
+import Data.Graph.HSI.Polytope ( Polytope(..), HsiPolytope )
 
 import Data.List ( elemIndices )
 import qualified Data.EnumMap as Map
@@ -29,8 +29,8 @@ coCoordVal Plus  = coValMin
 -- Value of a coefficient to calculate the halfspace
 coHsCoeff :: Coeff -> Double
 coHsCoeff Zero = 0
-coHsCoeff Minus = coValMin
-coHsCoeff Plus = coValMax
+coHsCoeff Minus = -1
+coHsCoeff Plus = 1
 
 -- --------------------------------------------------------------------
 -- A CubeFace (short CFace) is a list of Coeffs
@@ -81,7 +81,7 @@ subs es =
 -- --------------------------------------------------------------------
 -- Create a polytope of a given dimension
 -- --------------------------------------------------------------------
-mkCube :: Dim -> Polytope
+mkCube :: Dim -> HsiPolytope
 mkCube dim = Polytope { polyHs = hsmap, polyDag = dag}
   where
     cubeFaces :: [CFace]
@@ -94,25 +94,25 @@ mkCube dim = Polytope { polyHs = hsmap, polyDag = dag}
         keys = (head . cfHskeyVals ) <$> dim2s
         hsvects = mkHalfspace <$> dim2s
 
-    dag :: Dag Face
-    dag =  Dag {start = 0, dagMap = dagmap }
+    dag :: HsiDag
+    dag =  Dag {dagStart = 0, dagNodes = dagmap }
       where
         dagmap = Map.fromList $ zip keys nodes
         keys = nodekeyVal <$> cubeFaces
         nodes = mkNode <$> cubeFaces
 
-    mkNode :: CFace -> Node Face
+    mkNode :: CFace -> HsiNode
     mkNode cf =
         let face = mkFace cf
             kids = subs cf
-        in Node {nodeKids = kids, nodeData = face}
+        in Node {nodeKids = kids, nodeData = face, nodeAttr = mempty}
 
     mkFace :: CFace -> Face
     mkFace cf =
         let hsKeys = cfHskeyVals cf
         in  if cfDim  cf== 0
-            then Vertex mempty (mkVector cf) hsKeys
-            else Nonvert mempty (cfDim cf) hsKeys Hidden
+            then Vertex (mkVector cf) hsKeys
+            else Nonvert(cfDim cf) hsKeys
 
     mkHalfspace :: CFace -> Halfspace
     mkHalfspace cf = hsFromList $ (coHsCoeff <$> cf) ++  [coValMin]

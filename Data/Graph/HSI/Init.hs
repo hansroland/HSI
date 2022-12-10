@@ -5,6 +5,7 @@ module Data.Graph.HSI.Init (mkPyramid, mkTriangle)
 
 import Data.Graph.Dag
 import Data.Graph.HSI.Face
+import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Halfspace ( HsKey(..), Dim(..), hsFromList, normalize )
 import Data.Graph.HSI.Polytope
 
@@ -28,15 +29,12 @@ sqrt2_100 =sqrt2 * 100
 -- 3-dim pyramide
 -- -----------------------------------------------------------------
 
-mkPyramid :: Polytope
+mkPyramid :: HsiPolytope
 mkPyramid = Polytope { polyHs = hsPyramid, polyDag = mkPyramidDag }
 
 -- Create the graph structure for the Pyramid
-mkPyramidDag :: Dag Face
+mkPyramidDag :: Dag Face RelPos                          -- where to define type for Dag Face RelPos
 mkPyramidDag = addNonvert 1 [2,3,4,5,6] 3 []
-     -- dummy for debugging
-     -- $ addNonvert 100 [100] 3 []
-     -- 2-dim faces
      $ addNonvert 2 [ 7,  8,  9]     2 [2]
      $ addNonvert 3 [ 7, 10, 13]     2 [3]
      $ addNonvert 4 [ 9, 10, 11, 12] 2 [1]  -- base
@@ -75,11 +73,11 @@ hsPyramid = Map.fromAscList $ zip [1..] hsList
 -- 2-dim triangle
 -- -----------------------------------------------------------------
 
-mkTriangle :: Polytope
+mkTriangle :: HsiPolytope
 mkTriangle = Polytope { polyHs = hsTri, polyDag = mkTriangleDag }
 
 -- Create the graph structure for a Triangle
-mkTriangleDag :: Dag Face
+mkTriangleDag :: Dag Face RelPos
 mkTriangleDag =  addNonvert 1 [2,3,4] 2 []
      $ addNonvert 2 [5,6] 1 [2]
      $ addNonvert 3 [5,7] 1 [3]
@@ -100,12 +98,12 @@ hsTri = Map.fromAscList $ zip [2..] hsList
 -- ---------------------------------------------------------------------------
 -- Local helper function to add nodes
 -- ----------------------------------------------------------------------------
-addNonvert :: NodeKey -> [NodeKey] -> Dim -> [HsKey]  -> Dag Face -> Dag Face
+addNonvert :: NodeKey -> [NodeKey] -> Dim -> [HsKey]  -> Dag Face RelPos -> Dag Face RelPos
 addNonvert nodeKey subKeys dim hsKeys dag =
-     let face = Nonvert mempty dim hsKeys Hidden
-         node = Node {nodeKids = subKeys, nodeData = face}
+     let face = Nonvert dim hsKeys
+         node = Node {nodeKids = subKeys, nodeData = face, nodeAttr = mempty}
      in  dagUpdateNode dag nodeKey node
 
-addVertex :: NodeKey -> [HsKey] -> [Double] -> Dag Face -> Dag Face
-addVertex nodeKey hsKeys coords dag = dagCreateNode nodeKey [] (mkVertex hsKeys vec) dag
+addVertex :: NodeKey -> [HsKey] -> [Double] -> HsiDag -> HsiDag
+addVertex nodeKey hsKeys coords dag = dagCreateNode nodeKey [] (mkVertex hsKeys vec) mempty dag
      where vec = VU.fromList coords

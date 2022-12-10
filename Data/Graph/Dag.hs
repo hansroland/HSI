@@ -1,4 +1,5 @@
-module Data.Graph.Dag ( Dag(..), NodeKey, Node (..),
+module Data.Graph.Dag ( Dag(..), NodeKey,
+        Node (..),
         DagAlgoData(),
         NodeFunction,
         NodePredicate,
@@ -26,8 +27,7 @@ module Data.Graph.Dag ( Dag(..), NodeKey, Node (..),
         -- Operations on Nodes
         nodeAddKey,
         nodeAddKeys,
-        nodeUpdateData,
-        nodeUpdateDataWith
+        nodeUpdateData
 )
 where
 
