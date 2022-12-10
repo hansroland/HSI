@@ -19,15 +19,13 @@ import qualified Data.Vector.Unboxed as VU
 import Data.Maybe (fromMaybe)
 import Data.List ( sortBy )
 
-
 -- Type Synonyms
 type HsMap = EnumMap HsKey Halfspace
 type HsiPolytope = Polytope RelPos              -- A Polytope used during HSI Algorithm
 type VisPolytope = Polytope Visibility          -- A Polytope used during drawing
 
 -- See: https://ti.inf.ethz.ch/ew/courses/Geo20/lecture/gca20-9.pdf
-data Polytope a = Polytope { polyHs :: HsMap, polyDag :: Dag Face a}
-    -- deriving (Show)
+data Polytope a = Polytope { polyHs :: !HsMap, polyDag :: !(Dag Face a)}
 
 instance Show a => Show (Polytope a) where
   show poly@Polytope {polyHs}  =
@@ -80,7 +78,6 @@ polyRelPos Polytope {polyDag} =
 polyNodeAttr :: Polytope a -> a
 polyNodeAttr Polytope {polyDag} =
      nodeAttr $ dagNode polyDag $ dagStart polyDag
-
 
 -- Calculate the vertex vector, from halfspace indices.
 calculateVertex :: HsMap -> [HsKey] -> VU.Vector Double

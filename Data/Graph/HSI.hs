@@ -11,7 +11,6 @@ module Data.Graph.HSI (
     polyNodes,
     nodeDim,
     nodeAttr,
-    mkPyramid,
     hsFromList,
     visPoly
 )
@@ -22,6 +21,5 @@ import Data.Graph.Dag (Node(), NodeKey, nodeAttr )
 import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
-import Data.Graph.HSI.Init
 import Data.Graph.HSI.Visibility
 

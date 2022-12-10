@@ -82,7 +82,7 @@ dagNodeAssocs = Map.toAscList . dagNodes
 -- ---------------------------------------------------------------------------
 -- DagAlgoData
 -- ---------------------------------------------------------------------------
-data DagAlgoData n a u = DagAlgoData {dsDag :: Dag n a, dsDups :: Set NodeKey, dsUstate :: u}
+data DagAlgoData n a u = DagAlgoData {dsDag :: !(Dag n a), dsDups :: !(Set NodeKey), dsUstate :: !u}
 
 dsInit :: Dag n a -> u -> DagAlgoData n a u
 dsInit dag ustate = DagAlgoData {dsDag = dag, dsDups = Set.empty, dsUstate = ustate}

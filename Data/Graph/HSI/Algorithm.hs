@@ -18,12 +18,10 @@ import Data.Set (Set)
 import Data.List ( (\\) )
 import Control.Monad.State.Strict ( State, unless )
 
-import Debug.Trace ( trace )
-
 -- Apply one single halfspace to the polytope
 hsiStep :: HsiPolytope -> Halfspace -> Either String HsiPolytope
 hsiStep poly hs = do
-  let poly1 = trace ("Process halfspace:" ++ show hs) $ hsiRelPosPoly hs poly
+  let poly1 = hsiRelPosPoly hs poly
       dag = polyDag poly1
       relHs = nodeAttr $ dagNode dag $ dagStart dag
   checkRelHs relHs hs poly1

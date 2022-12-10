@@ -23,16 +23,16 @@ import qualified Data.EnumMap.Strict as Map
 
 -- IndexedEdge are edges with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
-            segKey1 :: NodeKey,
-            segKey2 :: NodeKey,
-            segVis :: Visibility
+            segKey1 :: !NodeKey,
+            segKey2 :: !NodeKey,
+            segVis :: !Visibility
             }
         deriving (Show)
 
 -- A DrawObj contains edges with indexes to the vertices.
 --  This allows to do calculations with the vertices (eg center the drawing)
 --  with using every vertex once.
-data DrawObj = DrawObj {doEdges::[IndexedEdge], doVerts :: PointMap}
+data DrawObj = DrawObj {doEdges :: ![IndexedEdge], doVerts :: !PointMap}
 
 type VertMap = EnumMap NodeKey (Vector Double)
 type PointMap = EnumMap NodeKey P2
@@ -82,7 +82,6 @@ getEdges dag =
                   }
     in  fmap node2seg $ filter (\n -> nodeDim n == 1) $ Map.elems $ dagNodes dag
 
-
 -- Make visible edges
 mkVisEdge :: Int -> Int -> IndexedEdge
 mkVisEdge k1 k2 = IndexedEdge (fromIntegral  k1) (fromIntegral k2) Visible
@@ -100,7 +99,6 @@ segToLine pmap seg =
             Visible -> Normal
             Hidden  -> Dotted
     in Line {lix1= vx1, lix2=vx2, liy1=vy1, liy2=vy2, liStyle = style}
-
 
 -- Create a rectangle to frame the drawing area.
 mkFrameRect :: DispParams -> DrawObj
@@ -121,7 +119,6 @@ mkRect x0 x1 y0 y1 =
         segs = [mkVisEdge 1 2,  mkVisEdge 1 3,
                 mkVisEdge 2 4,  mkVisEdge 3 4]
     in DrawObj segs pmap
-
 
 -- convert a DrawObject to a list of Svgs
 drawObjToLines :: DrawObj -> [Line]
