@@ -40,7 +40,7 @@ type PointMap = EnumMap NodeKey P2
 -- Display a polytope
 display :: DispParams -> VisPolytope -> IO ()
 display dparms poly = do
-    let dim = dpDim dparms
+    let dim = dpSize dparms
         pdir = dpPdir dparms
         dag = visPoly pdir poly
         linesPoly = drawObjToLines $ drawObjCenter dim $ mkDrawObj dparms dag
@@ -103,11 +103,11 @@ segToLine pmap seg =
 -- Create a rectangle to frame the drawing area.
 mkFrameRect :: DispParams -> DrawObj
 mkFrameRect dpParms =
-    let dim = dpDim dpParms
+    let size = dpSize dpParms
         px1 = 1
         py1 = 1
-        px2 = x dim - 1
-        py2 = y dim - 1
+        px2 = x size - 1
+        py2 = y size - 1
     in mkRect px1 px2 py1 py2
 
 -- A helper function to create a rectangle

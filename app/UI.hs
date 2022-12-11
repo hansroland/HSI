@@ -86,7 +86,7 @@ uiCommands cmd params = do
       "clear" -> uiClear
       "hsi"   -> uiHsi
       "draw"  -> uiDisplay
-      "dim"   -> uiDim params
+      "size"  -> uiSize params
       "pdir"  -> uiPdir params
       "list"  -> uiList
       _       -> liftIO $ putStrLn ("incorrect input `" <> cmd <> "`")
@@ -160,14 +160,14 @@ uiDisplay = do
     -- Transform a HsiPolytope into a VisPolytope
     liftIO $ display dparms $ polyHsi2Vis poly
 
--- Process the `dim` input
-uiDim :: (MonadState UiState m, MonadIO m) => [String] -> m()
-uiDim inps = updateIfValid fupd $ validateDim inps
+-- Process the `size` input
+uiSize :: (MonadState UiState m, MonadIO m) => [String] -> m()
+uiSize inps = updateIfValid fupd $ validateSize inps
   where
-    validateDim :: [String] -> Validation [String] [Double]
-    validateDim toks = validateReads toks <* (validateLength "dim" 2 toks)
+    validateSize :: [String] -> Validation [String] [Double]
+    validateSize toks = validateReads toks <* (validateLength "size" 2 toks)
     fupd :: ([Double] -> DispParams -> DispParams)
-    fupd lst = dpSetDim (P2 (head lst) (last lst))
+    fupd lst = dpSetSize (P2 (head lst) (last lst))
 
 -- Set the projection direction
 uiPdir :: (MonadState UiState m, MonadIO m) => [String] -> m()
@@ -196,7 +196,7 @@ validateRead str =
 validateReads :: Read a => [String] -> Validation [String] [a]
 validateReads = sequenceA . fmap validateRead
 
--- validate the length of a record.
+-- validate the length of the input tokens
 -- TODO: make function more polymorphic
 validateLength ::String -> Int -> [String] -> Validation [String] [Double]
 validateLength  msg len toks =

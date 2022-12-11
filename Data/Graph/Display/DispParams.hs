@@ -9,7 +9,7 @@ import qualified Data.Vector.Unboxed as VU
 
 
 data DispParams = DispParams {
-    dpDim      :: P2,                      -- Dimension of the whole drawing
+    dpSize      :: P2,                     -- Size (in html points) of the whole drawing
     dpPdir    :: Vector Double,            -- Projection direction
     dpFilepath :: FilePath                 -- The FilePath to write the HTML file
     -- dpJproj :: Int,
@@ -18,14 +18,14 @@ data DispParams = DispParams {
 
 dpInit :: DispParams
 dpInit = DispParams
-    { dpDim = point2 400 300,
+    { dpSize = point2 400 300,
       dpPdir = VU.fromList [3,1,-1],
       dpFilepath = "HSI00.html"              -- TODO: Take name from polytope !!
     }
 
--- Set a new value to the dpDim field
-dpSetDim :: P2 -> DispParams -> DispParams
-dpSetDim point dparms = dparms{ dpDim = point }
+-- Set a new value to the dpSize field
+dpSetSize :: P2 -> DispParams -> DispParams
+dpSetSize point dparms = dparms{ dpSize = point }
 
 dpSetPdir :: Vector Double -> DispParams -> DispParams
 dpSetPdir pdir dparms = dparms { dpPdir = pdir }

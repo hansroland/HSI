@@ -31,7 +31,7 @@ import Web.Browser(openBrowser)
 -- origin is top left. Here we change.
 plot :: DispParams ->  [Line] -> IO ()
 plot dparms lns = do
-    let maxy = round $ y $ dpDim dparms
+    let maxy = round $ y $ dpSize dparms
         svgLines = map (lineToSvg maxy) lns
         htmlPage = page dparms svgLines
         filePath = dpFilepath dparms
@@ -62,6 +62,6 @@ page dparms svgs = docTypeHtml $ do
 -- create a Svg document
 svgDoc :: DispParams -> Svg -> Svg
 svgDoc dparms =
-    let w = toValue $ x $ dpDim dparms
-        h = toValue $ y $ dpDim dparms
+    let w = toValue $ x $ dpSize dparms
+        h = toValue $ y $ dpSize dparms
     in  svg ! width w ! height h
