@@ -25,7 +25,10 @@ import System.Directory
 import System.IO
 
 import qualified Data.Vector.Unboxed as VU
+-- import Data.Vector.Internal.Check (checkLength)
 -- import Data.Graph.HSI (mkPyramid)
+
+-- import Debug.Trace
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
@@ -89,8 +92,15 @@ uiCommands cmd params = do
       "size"  -> uiSize params
       "pdir"  -> uiPdir params
       "list"  -> uiList
+      "cd"    -> uiCd params
       _       -> liftIO $ putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
+
+-- Change directory for reading files
+uiCd :: MonadIO m => [String] -> m()
+uiCd toks = do
+  let valid = (validateLength "cd" 1 toks)
+  doIfValid valid (setCurrentDirectory . head)
 
 -- TODO Improve the whole validation mess !! (More Haskell less C#)
 -- TODO do it only in IO and return Halfspace list
@@ -197,11 +207,10 @@ validateReads :: Read a => [String] -> Validation [String] [a]
 validateReads = sequenceA . fmap validateRead
 
 -- validate the length of the input tokens
--- TODO: make function more polymorphic
-validateLength ::String -> Int -> [String] -> Validation [String] [Double]
+validateLength :: String -> Int -> [a] -> Validation [String] [a]
 validateLength  msg len toks =
     if length toks == len
-        then Success mempty
+        then Success toks
         else Failure ([ msg <> " has wrong number of tokens" ])
 
 --
@@ -214,3 +223,9 @@ updateIfValid fupd (Success rslt) = do
       putDparm $ fupd rslt dparms
 updateIfValid _ (Failure msgs)  =
       mapM_ (liftIO . putStrLn) msgs
+
+doIfValid:: MonadIO m => Validation [String] [String]
+      -> ([String] -> IO())
+      -> m ()
+doIfValid (Success parms) f = liftIO $ f parms
+doIfValid (Failure msgs) _ = mapM_ (liftIO . putStrLn) msgs
