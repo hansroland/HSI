@@ -15,7 +15,8 @@ import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.InitCube
 import Data.Graph.Display.Display (display)
 
-import Validation (Validation (..))
+import Validation (Validation (..), failure, isSuccess)
+import Data.List.NonEmpty (NonEmpty(..))
 
 import Text.Read(readMaybe)
 
@@ -27,8 +28,6 @@ import System.IO
 import qualified Data.Vector.Unboxed as VU
 -- import Data.Vector.Internal.Check (checkLength)
 -- import Data.Graph.HSI (mkPyramid)
-
--- import Debug.Trace
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
@@ -85,7 +84,7 @@ uiLoop = do
 uiCommands :: String -> [String] -> StateT UiState IO ()
 uiCommands cmd params = do
     case cmd of
-      "input" -> uiReadHss params
+      "load"  -> uiLoadHss params
       "clear" -> uiClear
       "hsi"   -> uiHsi
       "draw"  -> uiDisplay
@@ -97,36 +96,35 @@ uiCommands cmd params = do
       -- The `end`command is processed in the uiLoop Function above.
 
 -- Change directory for reading files
-uiCd :: MonadIO m => [String] -> m()
+uiCd :: (MonadState UiState m, MonadIO m) => [String] -> m ()
 uiCd toks = do
-  let valid = (validateLength "cd" 1 toks)
-  doIfValid valid (setCurrentDirectory . head)
+    dirValid <- whenS toks (validateLength "cd" 1) (validateDirExists)
+    doIfValid dirValid (liftIO . setCurrentDirectory . head)
 
--- TODO Improve the whole validation mess !! (More Haskell less C#)
--- TODO do it only in IO and return Halfspace list
+
+-- TODO Needs still a lot of improvments !!!!!
+--      Validation of readability of numeric data
+--      Same dimension for all hss entries etc etc
 -- Read the halfspaces from a file
-uiReadHss :: [String] -> StateT UiState IO ()
-uiReadHss parms = do
-    if null parms
-      then do
-        liftIO $ putStrLn "missing filename"
-      else do
-        let path = head parms
-        bFileExists <- liftIO $ doesFileExist path
-        if bFileExists
-          then do
-            liftIO $ putStrLn ("Reading file " <> path)
-            contents <- liftIO $ readFile path
-            let lns = lines contents
-            liftIO $ mapM_ putStrLn lns
-            let linToks = map words lns
-                linValues :: [[Double]] = map (map read ) linToks
-                hss = map hsFromList linValues
-                strHss = map show hss
-            liftIO $ mapM_ putStrLn $ strHss
-            putHss hss
-          else do
-            liftIO $ putStrLn ("File " <> path <> " does not exist")
+uiLoadHss :: [String] -> StateT UiState IO ()
+uiLoadHss toks = do
+    fnValid <- whenS toks (validateLength "cd" 1) (validateFileExists)
+    when (isSuccess fnValid) $ load $ head toks
+    informIfFailure fnValid
+    pure ()
+    where
+      load :: String -> StateT UiState IO ()
+      load path = do
+        liftIO $ putStrLn ("Reading file " <> path)
+        contents <- liftIO $ readFile path
+        let lns = lines contents
+        liftIO $ mapM_ putStrLn lns
+        let linToks = map words lns
+            linValues :: [[Double]] = map (map read ) linToks
+            hss = map hsFromList linValues
+            strHss = map show hss
+        liftIO $ mapM_ putStrLn $ strHss
+        putHss hss
 
 -- Run the HSI algorithm on the halfspaces into the halfspace store
 uiHsi :: (MonadState UiState m, MonadIO m) => m()
@@ -148,11 +146,18 @@ uiHsi = do
 -- List the current polytope in the UI State
 uiList :: (MonadState UiState m, MonadIO m) => m()
 uiList = do
+    liftIO $ putStrLn "Unprocessed Halfspaces:"
+    liftIO $ putStrLn "-----------------------"
+    hslist <- gets uiHss
+    if (null hslist)
+        then liftIO $ putStrLn "(empty)"
+        else liftIO $ mapM_ putStrLn $ map show hslist
+    --
+    liftIO $ putStrLn "\nPolytope"
     poly <- gets uiPoly
     liftIO $ putStrLn $ show poly
     liftIO $ putStrLn $ show $ polyStats poly
     liftIO $ putStrLn $ show $ checkFormulaEuler poly
-
 
 -- Reset the application state
 -- Reset the polytope and the halfspace store
@@ -174,7 +179,7 @@ uiDisplay = do
 uiSize :: (MonadState UiState m, MonadIO m) => [String] -> m()
 uiSize inps = updateIfValid fupd $ validateSize inps
   where
-    validateSize :: [String] -> Validation [String] [Double]
+    validateSize :: [String] -> Validate [Double]
     validateSize toks = validateReads toks <* (validateLength "size" 2 toks)
     fupd :: ([Double] -> DispParams -> DispParams)
     fupd lst = dpSetSize (P2 (head lst) (last lst))
@@ -183,7 +188,7 @@ uiSize inps = updateIfValid fupd $ validateSize inps
 uiPdir :: (MonadState UiState m, MonadIO m) => [String] -> m()
 uiPdir inps = updateIfValid fupd $ validatePdir inps
   where
-    validatePdir :: [String] -> Validation [String] [Double]
+    validatePdir :: [String] -> Validate [Double]
     validatePdir toks = validateReads toks <* (validateLength "pdir" 3 toks)
     fupd :: ([Double] -> DispParams -> DispParams)
     fupd = dpSetPdir . VU.fromList
@@ -194,29 +199,68 @@ uiPdir inps = updateIfValid fupd $ validatePdir inps
 -- ---------------------------------------------------------------------------------
 -- General validation functions
 -- ---------------------------------------------------------------------------------
+type Validate a = Validation (NonEmpty String) a
+
+-- Function to run a validation in IO, when a first valiation succeeds!
+whenS:: MonadIO m => a
+                  -> (a -> Validate a)                -- a precondition for the IO valiation
+                  -> (a -> IO (Validate a))           -- The IO validation
+                 -> m (Validate a)
+whenS as v1 v2 = do
+    let val1 = v1 as
+    if (isSuccess val1)
+        then liftIO $ v2 as
+        else pure val1
+
+-- validate if a file existS
+validateFileExists :: MonadIO m => [String] -> m (Validate [String])
+validateFileExists strs = do
+    let strDir = head strs
+    bExits <- liftIO $ doesFileExist strDir
+    if bExits
+       then return $ Success strs
+       else return $ failure $ "File `" <> strDir <> "` doesn't exist"
+
+-- validate if a directory existS
+validateDirExists :: MonadIO m => [String] -> m (Validate [String])
+validateDirExists strs = do
+    let strDir = head strs
+    bExits <- liftIO $ doesDirectoryExist strDir
+    if bExits
+       then return $ Success strs
+       else return $ failure $ "Directory `" <> strDir <> "` doesn't exist"
 
 -- validate whether the input string can be read
-validateRead :: Read a => String -> Validation [String] a
+validateRead :: Read a => String -> Validate  a
 validateRead str =
   case readMaybe str of
     Just d  -> Success d
-    Nothing -> Failure [str <> " is not numeric"]
+    Nothing -> failure $ str <> " is not numeric"
 
 -- validate whether all elements of a list can be read
-validateReads :: Read a => [String] -> Validation [String] [a]
+validateReads :: Read a => [String] -> Validate  [a]
 validateReads = sequenceA . fmap validateRead
 
+-- validate only one input token
+-- Check for 2 as the command is included
+-- checkLengthEq1 :: String -> [String] -> Validate Bool
+-- checkLengthEq1  msg toks = trace ("CheckLength1:" ++ show toks ++ " " ++ show (length toks)) $ Success $ length toks == 2
+-- TODO: Take the error message out of client code
+ --   if
+ --       then Success toks
+ --       else Failure ([ "`" <> msg <> "` needs one parameter" ])
+
 -- validate the length of the input tokens
-validateLength :: String -> Int -> [a] -> Validation [String] [a]
+validateLength :: String -> Int -> [a] -> Validate [a]
 validateLength  msg len toks =
     if length toks == len
         then Success toks
-        else Failure ([ msg <> " has wrong number of tokens" ])
+        else failure $ msg <> " needs " <> show len <> " parameters"
 
 --
 updateIfValid :: (MonadState UiState m, MonadIO m) =>
       ([a] -> DispParams -> DispParams)
-      -> Validation [String] [a]
+      -> Validate[a]
       -> m()
 updateIfValid fupd (Success rslt) = do
       dparms <- gets uiDparms
@@ -224,8 +268,12 @@ updateIfValid fupd (Success rslt) = do
 updateIfValid _ (Failure msgs)  =
       mapM_ (liftIO . putStrLn) msgs
 
-doIfValid:: MonadIO m => Validation [String] [String]
-      -> ([String] -> IO())
+doIfValid:: MonadIO m => Validate [String]
+      -> ([String] -> IO ())
       -> m ()
 doIfValid (Success parms) f = liftIO $ f parms
 doIfValid (Failure msgs) _ = mapM_ (liftIO . putStrLn) msgs
+
+informIfFailure :: MonadIO m => Validate [String] -> m()
+informIfFailure (Failure msgs) = mapM_ (liftIO . putStrLn) msgs
+informIfFailure _              = pure ()
