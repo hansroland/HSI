@@ -30,7 +30,7 @@ writeVisitingSequence (key, node) = do
 
 -- Postorder processing with single visit to node
 triangle22 :: Dag Triangle2 ()
-triangle22 = postOrderSingle writeVisitingSequence 0 triangle21
+triangle22 = postOrder Single writeVisitingSequence 0 triangle21
 
 rslt_triangle22 :: String
 rslt_triangle22 = "DAG start = 1\n" ++
@@ -46,7 +46,7 @@ rslt_triangle22 = "DAG start = 1\n" ++
 -- Postorder processing with multiple visits to a node
 -- Add the visiting sequence to the nodes
 triangle23 :: Dag Triangle2 ()
-triangle23 = postOrderMultiple writeVisitingSequence 0 triangle21
+triangle23 = postOrder Multiple writeVisitingSequence 0 triangle21
 
 rslt_triangle23 :: String
 rslt_triangle23 = "DAG start = 1\n" ++

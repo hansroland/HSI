@@ -84,13 +84,17 @@ dagNodeAssocs = Map.toAscList . dagNodes
 -- ---------------------------------------------------------------------------
 data DagAlgoData n a u = DagAlgoData {dsDag :: !(Dag n a), dsDups :: !(Set NodeKey), dsUstate :: !u}
 
+data VisitFreq = Single                      -- Single visit to each node
+               | Multiple                    -- Multiple visits to each node
+
 dsInit :: Dag n a -> u -> DagAlgoData n a u
 dsInit dag ustate = DagAlgoData {dsDag = dag, dsDups = Set.empty, dsUstate = ustate}
 
 -- Function to modify the `dsDups` field in a DagAlgoData record
 -- TODO: improve subfunction
-modifyDups :: MonadState (DagAlgoData n a u) m => (Set NodeKey -> Set NodeKey) -> m ()
-modifyDups f = modify' $ modDups f
+modifyDupsCond :: MonadState (DagAlgoData n a u) m => VisitFreq -> (Set NodeKey -> Set NodeKey) -> m ()
+modifyDupsCond Multiple _ = pure ()
+modifyDupsCond Single f = modify' $ modDups f
   where
     modDups :: (Set NodeKey -> Set NodeKey) -> DagAlgoData n a u -> DagAlgoData n a u
     modDups f' dagState = dagState {dsDups = f' (dsDups dagState)}
@@ -134,17 +138,17 @@ type NodeFunction n a u = (NodeKey, Node n a) -> State (DagAlgoData n a u) ()
 type NodePredicate n a = Node n a -> Bool
 
 -- ---------------------------------------------------------------------------
--- Postorder processing
+-- Postorder processing:
 -- ---------------------------------------------------------------------------
 
--- Process postorder. Single visits to each node.
-postOrderSingle :: NodeFunction n a u -> u -> Dag n a -> Dag n a
-postOrderSingle nodefun ustate dag =
-  postOrderSingleFilter nodefun (const True) ustate dag
+-- Process postorder without filtering
+postOrder :: VisitFreq -> NodeFunction n a u -> u -> Dag n a -> Dag n a
+postOrder visitFreq nodefun ustate dag =
+  postOrderFilter visitFreq nodefun (const True) ustate dag
 
--- Process postorder. Single visits to each node. Filter function to skip nodes
-postOrderSingleFilter :: forall n a u . NodeFunction n a u -> NodePredicate n a -> u -> Dag n a -> Dag n a
-postOrderSingleFilter nodefun pred ustat dag =
+-- Process postorder with a filter function to skip nodes
+postOrderFilter :: forall n a u . VisitFreq -> NodeFunction n a u -> NodePredicate n a -> u -> Dag n a -> Dag n a
+postOrderFilter visitFreq nodefun pred ustat dag =
     dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag ustat)
   where
     go :: NodeKey -> State (DagAlgoData n a u) ()
@@ -153,8 +157,8 @@ postOrderSingleFilter nodefun pred ustat dag =
         node <- getNode key
         if  pred node
             then do
-                -- Add the current key to the processed keys
-                modifyDups $ Set.insert key
+                -- Conditionally add the current key to the processed keys
+                modifyDupsCond visitFreq $ Set.insert key
                 -- Get the direct children that haven't been processed
                 dups <- gets dsDups
                 let subkeys = (nodeKids node) \\ (Set.toList dups)
@@ -164,43 +168,19 @@ postOrderSingleFilter nodefun pred ustat dag =
                 _ <- nodefun (key, node)
                 pure ()
             else do
-                modifyDups $ Set.insert key
-
-
--- Process postorder. Multiple visits to each node.
-postOrderMultiple :: NodeFunction n a u -> u -> Dag n a -> Dag n a
-postOrderMultiple nodefun ustate dag =
-  postOrderMultipleFilter nodefun (const True) ustate dag
-
--- Process postorder. Multiple visits to each node. Filter function to skip nodes
-postOrderMultipleFilter :: forall n a u . NodeFunction n a u -> NodePredicate n a -> u -> Dag n a -> Dag n a
-postOrderMultipleFilter nodefun pred ustat dag =
-    dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag ustat)
-  where
-    go ::  NodeKey -> State (DagAlgoData n a u) ()
-    go key = do
-        -- Get the current node
-        node <- getNode key
-        if  pred node
-            then do
-                -- Recursion over the children
-                _ <- go `mapM` (nodeKids node)
-                -- Process the current node
-                _ <- nodefun (key, node) -- ustate1 dag1
-                pure ()
-            else pure ()
+                modifyDupsCond visitFreq $ Set.insert key
 
 -- -------------------------------------------------------------------------------------------
 -- Preorder processing
 -- -------------------------------------------------------------------------------------------
 
--- Process preorder. Single visits to each node.
-preOrderSingle :: NodeFunction n a u -> u -> Dag n a -> Dag n a
-preOrderSingle nodefun ustate dag  = preOrderSingleFilter nodefun (const True) ustate dag
+-- Process preorder without filtering
+preOrder :: VisitFreq -> NodeFunction n a u -> u -> Dag n a -> Dag n a
+preOrder visitFreq nodefun ustate dag  = preOrderFilter visitFreq nodefun (const True) ustate dag
 
--- Process preorder. Single visits to each node. Filter function to skip nodes
-preOrderSingleFilter :: forall n a u. NodeFunction n a u-> NodePredicate n a -> u -> Dag n a -> Dag n a
-preOrderSingleFilter nodefun pred ustate dag =
+-- Process preorder with a filter function to skip nodes
+preOrderFilter :: forall n a u. VisitFreq -> NodeFunction n a u-> NodePredicate n a -> u -> Dag n a -> Dag n a
+preOrderFilter visitFreq nodefun pred ustate dag =
     dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag ustate)
   where
     go :: NodeKey -> State (DagAlgoData n a u) ()
@@ -211,8 +191,8 @@ preOrderSingleFilter nodefun pred ustate dag =
             then do
                 -- Process the current node
                 _ <- nodefun (key, node)
-                -- Add the current NodeKey to the set of the processed
-                modifyDups $ Set.insert key
+                -- Conditionally add the current NodeKey to processed keys
+                modifyDupsCond visitFreq $ Set.insert key
                 dups <- gets dsDups
                 -- Get the direct children that haven't been processed
                 let subkeys = (nodeKids node) \\ (Set.toList dups)
@@ -220,22 +200,4 @@ preOrderSingleFilter nodefun pred ustate dag =
                 _ <- go `mapM` subkeys
                 pure ()
             else do
-                modifyDups $ Set.insert key
-
--- Process preorder. Multiple visits to each node. Filter function to skip nodes
-preOrderMultipleFilter :: forall n a u . NodeFunction n a u -> NodePredicate n a -> u -> Dag n a -> Dag n a
-preOrderMultipleFilter nodefun pred param dag =
-    dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag param)
-  where
-    go :: NodeKey -> State (DagAlgoData n a u) ()
-    go  key = do
-        -- Get the current node
-        node <- getNode key
-        if  pred node
-            then do
-                -- Process the current node
-                _ <- nodefun (key, node) -- param dag1
-                -- Recursion over the children
-                _ <- go `mapM` (nodeKids node)
-                pure ()
-            else pure ()
+                modifyDupsCond visitFreq $ Set.insert key

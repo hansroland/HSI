@@ -43,7 +43,7 @@ hsiRelPosPoly :: Halfspace -> HsiPolytope -> HsiPolytope
 hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     poly {polyDag = newDag }
   where
-    newDag = postOrderSingle relPosNode () dag0
+    newDag = postOrder Single relPosNode () dag0
 
     -- Calculate the relPos for a single node
     relPosNode :: NodeFunction Face RelPos ()
@@ -72,7 +72,7 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
 -- Remove Nodes, that are now outside the new halfspace
 hsiIntersectHMin :: HsiPolytope -> HsiPolytope
 hsiIntersectHMin poly@Polytope {polyDag} =
-    poly {polyDag = postOrderSingle nodeRemove Set.empty polyDag}
+    poly {polyDag = postOrder Single nodeRemove Set.empty polyDag}
   where
     nodeRemove :: NodeFunction  Face RelPos (Set NodeKey)
     nodeRemove (key, node@Node{nodeKids, nodeAttr}) = do
@@ -92,7 +92,7 @@ hsiIntersectHMin poly@Polytope {polyDag} =
 hsiIntersectH0 :: (HsKey, HsiPolytope) -> HsiPolytope
 hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
   where
-    newDag = postOrderMultipleFilter (processNode  polyHs) isToProcess () polyDag
+    newDag = postOrderFilter Multiple (processNode  polyHs) isToProcess () polyDag
     processNode :: HsMap -> NodeFunction Face RelPos ()
     processNode hsmap (key,node) = do
       dag <- getDag
