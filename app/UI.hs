@@ -19,15 +19,12 @@ import Validation (Validation (..), failure, isSuccess)
 import Data.List.NonEmpty (NonEmpty(..))
 
 import Text.Read(readMaybe)
-
 import Data.Foldable
 import Control.Monad.State.Strict
 import System.Directory
 import System.IO
 
 import qualified Data.Vector.Unboxed as VU
-import Control.Monad.RWS (gets)
-import Data.Graph.HSI.Algorithm (hsiRed)
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
