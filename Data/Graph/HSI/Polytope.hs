@@ -29,8 +29,8 @@ data Polytope a = Polytope { polyHs :: !HsMap, polyDag :: !(Dag Face a)}
 
 instance Show a => Show (Polytope a) where
   show poly@Polytope {polyHs}  =
-       concat ("Halfspaces" : nl : map showHsAssoc (Map.toAscList polyHs)) ++
-       concat ("Faces" : (map showNodeAssoc $ sortNodeAssoc $ polyNodeAssocs poly ))
+       concat ("Polytope Halfspaces:" : nl : map showHsAssoc (Map.toAscList polyHs)) ++
+       concat ("Polytope Faces:" : (map showNodeAssoc $ sortNodeAssoc $ polyNodeAssocs poly ))
     where
         showHsAssoc ::  (HsKey, Halfspace) -> String
         showHsAssoc (key, hs) = show key ++ " -> " ++ show hs ++ nl
@@ -118,3 +118,9 @@ polyHsi2Vis poly = poly{ polyDag = newDag}
     newDag = dag {dagNodes = newNds}
     hsi2vis :: HsiNode -> VisNode
     hsi2vis node = node {nodeAttr = Hidden}
+
+-- Get the dimension of a polytope
+polyDim :: HsiPolytope -> Dim
+polyDim poly =
+    let dag = polyDag poly
+    in  nodeDim $ dagNode dag $ dagStart dag

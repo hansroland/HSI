@@ -36,8 +36,8 @@ nodeAddKeys newKeys node =
     node {nodeKids = newKeys <> nodeKids node}
 
 -- Update the nodeData of a node
-nodeUpdateData :: Node n a -> n -> a -> Node n a
-nodeUpdateData node newData newAttr = node { nodeData = newData, nodeAttr = newAttr}
+nodeUpdateData :: n -> Node n a -> Node n a
+nodeUpdateData newData node@Node{} = node { nodeData = newData }
 
 -- isLeaf
 isLeaf :: Node n a -> Bool

@@ -26,15 +26,15 @@ import System.Directory
 import System.IO
 
 import qualified Data.Vector.Unboxed as VU
--- import Data.Vector.Internal.Check (checkLength)
--- import Data.Graph.HSI (mkPyramid)
+import Control.Monad.RWS (gets)
+import Data.Graph.HSI.Algorithm (hsiRed)
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
 data UiState = UiState {
-    uiPoly :: HsiPolytope,
+    uiPoly   :: HsiPolytope,
     uiDparms :: DispParams,
-    uiHss     :: [Halfspace]
+    uiHss    :: [Halfspace]
     }
 
 -- Store a new poly into the UiState
@@ -92,6 +92,7 @@ uiCommands cmd params = do
       "pdir"  -> uiPdir params
       "list"  -> uiList
       "cd"    -> uiCd params
+      "red"   -> uiRed
       _       -> liftIO $ putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
 
@@ -167,6 +168,11 @@ uiClear = get >>= uiReset
     uiReset :: (MonadState UiState m) => UiState -> m()
     uiReset uiState = put $ uiState{ uiPoly = (mkCube 3), uiHss = [] }
 
+uiRed :: (MonadState UiState m) => m()
+uiRed = do
+    poly <- gets uiPoly
+    putPoly $ hsiRed poly
+
 -- Display the current polytope with the current display parameters
 uiDisplay :: (MonadState UiState m, MonadIO m) => m()
 uiDisplay = do
@@ -201,7 +207,7 @@ uiPdir inps = updateIfValid fupd $ validatePdir inps
 -- ---------------------------------------------------------------------------------
 type Validate a = Validation (NonEmpty String) a
 
--- Function to run a validation in IO, when a first valiation succeeds!
+-- Function to run a validation in IO, only when a first valiation succeeds!
 whenS:: MonadIO m => a
                   -> (a -> Validate a)                -- a precondition for the IO valiation
                   -> (a -> IO (Validate a))           -- The IO validation
@@ -240,15 +246,6 @@ validateRead str =
 -- validate whether all elements of a list can be read
 validateReads :: Read a => [String] -> Validate  [a]
 validateReads = sequenceA . fmap validateRead
-
--- validate only one input token
--- Check for 2 as the command is included
--- checkLengthEq1 :: String -> [String] -> Validate Bool
--- checkLengthEq1  msg toks = trace ("CheckLength1:" ++ show toks ++ " " ++ show (length toks)) $ Success $ length toks == 2
--- TODO: Take the error message out of client code
- --   if
- --       then Success toks
- --       else Failure ([ "`" <> msg <> "` needs one parameter" ])
 
 -- validate the length of the input tokens
 validateLength :: String -> Int -> [a] -> Validate [a]

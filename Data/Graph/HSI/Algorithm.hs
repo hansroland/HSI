@@ -16,7 +16,8 @@ import qualified Data.Set as Set
 
 import Data.Set (Set)
 import Data.List ( (\\) )
-import Control.Monad.State.Strict ( State, unless )
+import Data.Maybe (fromJust)
+import Control.Monad.State.Strict ( State, unless, when )
 
 -- Apply one single halfspace to the polytope
 hsiStep :: HsiPolytope -> Halfspace -> Either String HsiPolytope
@@ -152,3 +153,42 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
       let isH0Key :: NodeKey -> Bool
           isH0Key = (== relPos0) . nodeAttr . dagNode dag
       in any isH0Key $ nodeKids node
+
+-- Redundancy processing:
+hsiRed :: HsiPolytope -> HsiPolytope
+hsiRed poly@Polytope {polyDag, polyHs} = poly {polyDag = newDag, polyHs = newHs}
+  where
+    facetDim = polyDim poly - 1
+    newDag = preOrder Multiple addHs  Nothing $
+               preOrder Single clearHss () polyDag
+    newHs = consHss newDag polyHs
+    -- Clear out the HsKeys for all faces with a dimension below the facet-dim
+    clearHss :: NodeFunction Face RelPos ()
+    clearHss (key,node@Node{nodeData}) = do
+      dag <- getDag
+      when ((nodeDim node) < facetDim) $ do
+              putDag $ dagUpdateNode dag key
+                $  nodeUpdateData (faceSetHsKeys [] nodeData) node
+      pure ()
+    addHs :: NodeFunction Face RelPos (Maybe HsKey)
+    addHs (key,node@Node{nodeData})
+        -- All faces other than polytope and facets. (In 3D: vertices and edges)
+        -- Add the HsKey from the supporting facet to all decendants.
+      | (faceDim nodeData) < facetDim = do
+         dag <- getDag
+         ustate <- getUstate
+         let newNode = node{ nodeData = addHsKey nodeData $ fromJust ustate }
+         putDag $ dagUpdateNode dag key newNode
+         -- The facet: Store the HsKey of the facet in the user-state
+      | (nodeDim node) == facetDim = do
+         putUstate $ Just $ head $  nodeHsKeys node
+         -- The polytope
+      | otherwise = pure ()
+
+    consHss :: Dag Face RelPos -> HsMap -> HsMap
+    consHss dag hsMap =
+      let facetKeys = nodeKids $ dagNode dag (dagStart dag)
+          faces = (nodeData . dagNode dag) <$> facetKeys
+          usedKeys = concat $ faceHsKeys <$> faces
+          nonused = Map.keys hsMap \\ usedKeys
+      in  foldr (Map.delete) hsMap nonused

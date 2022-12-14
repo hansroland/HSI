@@ -16,7 +16,6 @@ triangle21 =
      $ dagCreateNode 1 [2,3,4] (100, []) ()
      $ dagInit 1
 
-
 -- Write visiting sequence into node
 writeVisitingSequence :: NodeFunction Triangle2 () Int
 writeVisitingSequence (key, node) = do
@@ -24,7 +23,7 @@ writeVisitingSequence (key, node) = do
     s <- getUstate
     let (n, ss) = nodeData node
     let s1 = s + 1
-        newNode = nodeUpdateData node (n, s1:ss) ()
+        newNode = nodeUpdateData (n, s1:ss) node
     putDag $ dagUpdateNode dag key newNode
     putUstate s1
 
