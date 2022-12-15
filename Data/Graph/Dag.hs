@@ -12,6 +12,7 @@ module Data.Graph.Dag ( Dag(..), NodeKey,
         -- Dag construction
         dagInit,
         dagNode,
+        dagStartNode,
         dagNodeAssocs,
         dagCreateNode,
         dagGrandNodes,

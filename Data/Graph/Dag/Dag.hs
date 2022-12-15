@@ -17,10 +17,10 @@ import Control.Monad.State.Strict
 import Data.Maybe ( fromMaybe )
 import Data.List ((\\), nub)
 
-type NodeMap n a = EnumMap NodeKey (Node n a)
 -- --------------------------------------------------------------
 -- Dag: Directed Acyclic Graphs
 -- --------------------------------------------------------------
+type NodeMap n a = EnumMap NodeKey (Node n a)
 -- The Dag contains the index of the start node and a map of all nodes
 data Dag n a = Dag
       { dagStart :: !NodeKey,
@@ -48,7 +48,7 @@ dagStartNode dag = dagNode dag $ dagStart dag
 dagInit :: NodeKey -> Dag n a
 dagInit (NodeKey key) = Dag {dagStart = (NodeKey key), dagNodes = Map.empty}
 
--- Create and insert a new node with a given key
+-- Create and insert  for a given key a new node with its attributes
 dagCreateNode :: NodeKey -> [NodeKey] -> n -> a -> Dag n a -> Dag n a
 dagCreateNode key subs nd attr dag =
     dag { dagNodes = Map.insert key (Node subs nd attr) (dagNodes dag)}

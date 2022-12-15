@@ -72,7 +72,7 @@ uiLoop = do
         let cmd = head tokens
             params = tail tokens
         case cmd of
-          "end" -> return ()
+          "exit" -> return ()
           _ -> do
               uiCommands cmd params
               uiLoop

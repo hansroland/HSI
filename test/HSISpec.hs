@@ -33,7 +33,7 @@ hs3 =  hsFromList  [0,0,1, -10]
 -- Show the relative position of the whole polytope
 -- The polytope is the triangle
 showRelPosPoly :: Halfspace -> String
-showRelPosPoly hs = show $ polyRelPos $ hsiRelPosPoly hs mkTriangle
+showRelPosPoly hs = show $ polyNodeAttr $ hsiRelPosPoly hs mkTriangle
 
 -- Show the Dag with only the remaining inside nodes
 -- The polytope is the triangle

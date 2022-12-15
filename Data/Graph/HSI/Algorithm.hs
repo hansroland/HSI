@@ -23,10 +23,8 @@ import Control.Monad.State.Strict ( State, unless, when )
 hsiStep :: HsiPolytope -> Halfspace -> Either String HsiPolytope
 hsiStep poly hs = do
   let poly1 = hsiRelPosPoly hs poly
-      dag = polyDag poly1
-      relHs = nodeAttr $ dagNode dag $ dagStart dag
+      relHs = nodeAttr $ dagStartNode $ polyDag poly1
   checkRelHs relHs hs poly1
-
 
 checkRelHs :: RelPos -> Halfspace -> HsiPolytope -> Either String HsiPolytope
 checkRelHs relPos hs poly
@@ -181,14 +179,14 @@ hsiRed poly@Polytope {polyDag, polyHs} = poly {polyDag = newDag, polyHs = newHs}
          putDag $ dagUpdateNode dag key newNode
          -- The facet: Store the HsKey of the facet in the user-state
       | (nodeDim node) == facetDim = do
-         putUstate $ Just $ head $  nodeHsKeys node
+         putUstate $ Just $ head $ nodeHsKeys node
          -- The polytope
       | otherwise = pure ()
 
     consHss :: Dag Face RelPos -> HsMap -> HsMap
-    consHss dag hsMap =
-      let facetKeys = nodeKids $ dagNode dag (dagStart dag)
+    consHss dag hsmap =
+      let facetKeys = nodeKids $ dagStartNode dag
           faces = (nodeData . dagNode dag) <$> facetKeys
           usedKeys = concat $ faceHsKeys <$> faces
-          nonused = Map.keys hsMap \\ usedKeys
-      in  foldr (Map.delete) hsMap nonused
+          nonused = Map.keys hsmap \\ usedKeys
+      in  foldr (Map.delete) hsmap nonused

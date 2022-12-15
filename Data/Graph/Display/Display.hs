@@ -5,23 +5,20 @@ module Data.Graph.Display.Display where
 import Data.Graph.Dag
 
 import Data.Graph.HSI
-import Data.Graph.HSI.Utils
+import Data.Graph.HSI.Utils                      -- TODO export needed functions from HSI
 
 import Data.Graph.Display.DispParams
 import Data.Graph.Display.Point2
 import Data.Graph.Display.Data
-
 import Data.Graph.Display.Html
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
-
 import qualified Data.Vector as V
-
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
 
--- IndexedEdge are edges with indexes to a vertice map
+-- And IndexedEdge is an edge with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
             segKey1 :: !NodeKey,
             segKey2 :: !NodeKey,
@@ -47,8 +44,7 @@ display dparms poly = do
         linesRect = drawObjToLines $ mkFrameRect dparms
     plot dparms (linesRect <> linesPoly)
 
-
--- Create from the DAG aDrawObj
+-- Transform a Dag into aDrawObj
 mkDrawObj :: DispParams -> VisDag -> DrawObj
 mkDrawObj dparms dag =
     let pdir = dpPdir dparms

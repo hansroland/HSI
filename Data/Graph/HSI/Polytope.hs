@@ -20,7 +20,6 @@ import Data.Maybe (fromMaybe)
 import Data.List ( sortBy )
 
 -- Type Synonyms
-type HsMap = EnumMap HsKey Halfspace
 type HsiPolytope = Polytope RelPos              -- A Polytope used during HSI Algorithm
 type VisPolytope = Polytope Visibility          -- A Polytope used during drawing
 
@@ -51,11 +50,11 @@ polyNodeAssocs = dagNodeAssocs . polyDag
 
 -- Return a list of all faces from a polytope
 polyFaces :: Polytope a -> [Face]
-polyFaces = fmap (nodeData . snd) . dagNodeAssocs . polyDag
+polyFaces = fmap (nodeData . snd) . polyNodeAssocs
 
--- Return a list of all nodes of a polytope
-polyNodes :: Polytope a -> [Node Face a]
-polyNodes = fmap snd . dagNodeAssocs . polyDag
+-- Get the attribute of the top (first). node of the dag
+polyNodeAttr :: Polytope a -> a
+polyNodeAttr Polytope {polyDag} = nodeAttr $ dagStartNode polyDag
 
 -- Add a new halfspace to the polytope
 polyInsertHalfspace :: Halfspace -> Polytope a -> (HsKey, Polytope a)
@@ -65,19 +64,6 @@ polyInsertHalfspace hs poly@Polytope {polyHs} =
         newhsmap = Map.insert hsKey hs polyHs
     in  (hsKey, poly {polyHs = newhsmap})
 
--- Map a list of HsKeys to something
-mapHs :: (Halfspace -> b) -> HsMap -> [HsKey] -> [b]
-mapHs hsFun hsmap keys = (hsFun . (hsmap Map.!)) <$> keys
-
--- Get the attribute of the first node of the dag TODO: Remove this function by the next!!!
-polyRelPos :: Polytope a -> a
-polyRelPos Polytope {polyDag} =
-     nodeAttr $ dagNode polyDag $ dagStart polyDag
-
--- Get the attribute of the first node of the dag
-polyNodeAttr :: Polytope a -> a
-polyNodeAttr Polytope {polyDag} =
-     nodeAttr $ dagNode polyDag $ dagStart polyDag
 
 -- Calculate the vertex vector, from halfspace indices.
 calculateVertex :: HsMap -> [HsKey] -> VU.Vector Double
@@ -85,7 +71,7 @@ calculateVertex hsmap keys =
     let fromRight :: Either String (VU.Vector Double) -> VU.Vector Double
         fromRight (Right b) = b
         fromRight (Left _) = error "Polytope.hs:calculateVertex returned left"
-        echelon = rref $ fromLists $  mapHs (VU.toList . hsEquation) hsmap keys
+        echelon = rref $ fromLists $  hsMap (VU.toList . hsEquation) hsmap keys
         lastCol = ncols <$> echelon
         -- round and unbox the last column
         eiVertex = asUnboxed . roundVector <$> (getCol <$> lastCol <*> echelon)
@@ -104,9 +90,11 @@ checkFormulaEuler :: Polytope a -> String
 checkFormulaEuler poly  =
     let dims = Map.elems $ polyStats poly
         alternateSeq = zipWith (*) dims $ cycle [1, -1]
-        euler = sum alternateSeq
+        evenfact | odd $ length dims = 0      -- We have 0 as element too
+                 | otherwise          = -1
+        euler =  sum alternateSeq + evenfact
     in  case euler of
-           1 -> "Euler Ok"
+           0 -> "Euler Ok"
            _ -> "EULER VIOLATED"
 
 -- Convert HsiPolytope to VisPol<tope
@@ -121,6 +109,4 @@ polyHsi2Vis poly = poly{ polyDag = newDag}
 
 -- Get the dimension of a polytope
 polyDim :: HsiPolytope -> Dim
-polyDim poly =
-    let dag = polyDag poly
-    in  nodeDim $ dagNode dag $ dagStart dag
+polyDim poly = nodeDim $ dagStartNode $ polyDag poly

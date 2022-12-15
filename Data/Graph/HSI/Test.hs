@@ -11,8 +11,8 @@ module Data.Graph.HSI.Test (
     -- Polytope
     Polytope(..),
     polyInsertHalfspace,
-    polyRelPos,
     polyStats,
+    polyNodeAttr,
     checkFormulaEuler,
     visPoly,
     -- HSI Algorithm

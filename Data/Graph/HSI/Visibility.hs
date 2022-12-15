@@ -9,7 +9,6 @@ import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Utils    -- TODO export needed stuff from Utils in Dag.Graph.HSI
 
 import Control.Monad.State.Strict (when )
-
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.EnumMap.Strict as Map
 

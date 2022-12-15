@@ -8,7 +8,6 @@ module Data.Graph.HSI (
     Halfspace(..),
     isVertex,
     polyNodeAssocs,
-    polyNodes,
     nodeDim,
     nodeAttr,
     hsFromList,

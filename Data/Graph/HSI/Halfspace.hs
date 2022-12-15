@@ -6,6 +6,8 @@ module Data.Graph.HSI.Halfspace where
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
+import Data.EnumMap.Strict(EnumMap)
+import qualified Data.EnumMap.Strict as Map
 
 -- Data type to store a Halfspace
 -- A halfspace ax + by + cz + d >= 0 is stored as Vector [a,b,c,d]
@@ -22,6 +24,8 @@ newtype HsKey = HsKey Int
     deriving (Eq, Ord, Num)
     deriving newtype (Read, Show, Enum, Real, Integral)
 
+type HsMap = EnumMap HsKey Halfspace
+
 -- Create a Halfspace from a list of doubles.
 -- Checking the length of the list is the task of the input program
 -- Note: Here we assume, that the length of the list has been checked!
@@ -31,6 +35,10 @@ hsFromList cs = Halfspace $ VU.fromList cs
 -- Get the equation vector out of a Halfspace.
 hsEquation :: Halfspace -> Vector Double
 hsEquation (Halfspace vs) = vs
+
+-- Map a list of HsKeys to something
+hsMap :: (Halfspace -> b) -> HsMap -> [HsKey] -> [b]
+hsMap hsFun hsmap keys = (hsFun . (hsmap Map.!)) <$> keys
 
 toVector :: Halfspace -> Vector Double
 toVector (Halfspace vs) = vs
