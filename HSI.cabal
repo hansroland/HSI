@@ -106,14 +106,7 @@ executable hsi
         libdag,
         libhsi,
         directory,
-        validation-selective,
         errors
-
-        -- bytestring,
-        -- exceptT-demo,
-        -- text,
-        -- transformers,
-
 
     hs-source-dirs:   app
     default-language: Haskell2010
