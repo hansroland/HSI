@@ -28,7 +28,7 @@ data Visibility = Visible | Hidden
 -- Check, whether a this face is a vertex
 isVertex :: Face -> Bool
 isVertex (Vertex _ _ ) = True
-isVertex _                = False
+isVertex _             = False
 
 -- Make a new Face representing a vertex
 mkVertex :: [HsKey] -> (Vector Double) -> Face
@@ -47,8 +47,8 @@ faceSetHsKeys keys (Vertex  vec _) = Vertex  vec keys
 
 -- Get the List of the HsKeys
 faceHsKeys :: Face -> [HsKey]
-faceHsKeys (Nonvert _   hsKeys) = hsKeys
-faceHsKeys (Vertex _ hsKeys)   = hsKeys
+faceHsKeys (Nonvert _ hsKeys) = hsKeys
+faceHsKeys (Vertex  _ hsKeys) = hsKeys
 
 -- Get the dimension
 faceDim :: Face -> Dim

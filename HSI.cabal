@@ -102,10 +102,18 @@ executable hsi
         mtl ^>=2.2.2,
         matrix,
         vector,
+        text,
         libdag,
         libhsi,
         directory,
-        validation-selective
+        validation-selective,
+        errors
+
+        -- bytestring,
+        -- exceptT-demo,
+        -- text,
+        -- transformers,
+
 
     hs-source-dirs:   app
     default-language: Haskell2010

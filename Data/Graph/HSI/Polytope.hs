@@ -54,7 +54,7 @@ polyFaces = fmap (nodeData . snd) . polyNodeAssocs
 
 -- Get the attribute of the top (first). node of the dag
 polyNodeAttr :: Polytope a -> a
-polyNodeAttr Polytope {polyDag} = nodeAttr $ dagStartNode polyDag
+polyNodeAttr = nodeAttr . dagStartNode . polyDag
 
 -- Add a new halfspace to the polytope
 polyInsertHalfspace :: Halfspace -> Polytope a -> (HsKey, Polytope a)
@@ -102,11 +102,11 @@ polyHsi2Vis :: HsiPolytope -> VisPolytope
 polyHsi2Vis poly = poly{ polyDag = newDag}
  where
     dag = polyDag poly
-    newNds = Map.map hsi2vis $ dagNodes dag
-    newDag = dag {dagNodes = newNds}
+    newNds = Map.map hsi2vis . dagNodes . polyDag
+    newDag = dag {dagNodes = newNds poly}
     hsi2vis :: HsiNode -> VisNode
     hsi2vis node = node {nodeAttr = Hidden}
 
 -- Get the dimension of a polytope
 polyDim :: HsiPolytope -> Dim
-polyDim poly = nodeDim $ dagStartNode $ polyDag poly
+polyDim = nodeDim . dagStartNode . polyDag

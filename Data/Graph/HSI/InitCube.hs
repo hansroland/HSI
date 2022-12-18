@@ -46,7 +46,7 @@ nodekeyVal :: CFace -> NodeKey
 nodekeyVal cFace = foldr (+) 0 $ zipWith (*) (nkeyVal <$> cFace)  powers3
   where
     powers3 :: [NodeKey]
-    powers3 = [ 3^n | n <- [(0:: Int)..] ]
+    powers3 = [negate (3^n) | n <- [(0:: Int)..] ]
      -- Value of a coefficient to calculate the NodeKey of a CFace
     nkeyVal :: Coeff -> NodeKey
     nkeyVal Zero  = 0
@@ -54,11 +54,13 @@ nodekeyVal cFace = foldr (+) 0 $ zipWith (*) (nkeyVal <$> cFace)  powers3
     nkeyVal Plus  = 1
 
 -- Calculate the HsKeys of a CFace
+-- Map the HsKeys to negative numbers and 0.
+-- Halfspaces from the user will be positive an numbered in user sequence .
 cfHskeyVals :: CFace -> [HsKey]
 cfHskeyVals cf = hskey <$> poks
   where
     poks = filter ((/= 0) . snd) $  zip [(0::HsKey)..] $ hkeyVal <$> cf
-    hskey (a,b) = a * (2::HsKey) + b
+    hskey (a,b) = negate (a * (2::HsKey) + b) + 1
     hkeyVal Zero  = 0
     hkeyVal Minus = 2
     hkeyVal Plus  = 1

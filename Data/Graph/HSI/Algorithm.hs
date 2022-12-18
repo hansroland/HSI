@@ -48,8 +48,7 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     relPosNode :: NodeFunction Face RelPos ()
     relPosNode (key, node) = do
       dag <- getDag
-      let relPos  = relPosFace node dag
-      putDag $ dagUpdateNode dag key node {nodeAttr = relPos}
+      putDag $ dagUpdateNode dag key node {nodeAttr = relPosFace node dag}
     -- Calculate the relative position for a vertex
     relPosFace :: HsiNode -> HsiDag -> RelPos
     relPosFace Node{nodeData = Vertex vec _ } _ = calcRelPosVertex hs vec
