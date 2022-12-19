@@ -16,10 +16,11 @@ import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.InitCube
 import Data.Graph.Display.Display (display)
 
-import qualified Data.Text      as T
-import qualified Data.Text.IO   as T
-import qualified Data.Text.Read as T
-import qualified Data.Vector    as V
+import           Data.Text(Text)
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as T
+import qualified Data.Text.Read         as T
+import qualified Data.Vector            as V
 import qualified Data.Vector.Unboxed    as VU
 import qualified Data.Vector.Generic    as VG
 import Data.List(partition)
@@ -39,6 +40,10 @@ data UiState = UiState {
     uiDparms :: DispParams,
     uiHss    :: [Halfspace]
     }
+
+type UiMonad a = StateT UiState IO a
+type UiVerifyMonad a = ExceptT Text (StateT UiState IO) a
+
 
 -- Store a new poly into the UiState
 putPoly :: MonadState UiState m => HsiPolytope -> m ()
@@ -63,7 +68,7 @@ uiInitState :: UiState
 uiInitState = UiState { uiPoly = mkCube 3, uiHss = [], uiDparms = dpInit}
 
 -- Loop over input till an `exit` command
-uiLoop :: StateT UiState IO ()
+uiLoop :: UiMonad ()
 uiLoop = do
     strDir <- liftIO $ getCurrentDirectory
     liftIO $ putStr ("hsi: " <> strDir <> ": ")
@@ -84,7 +89,7 @@ uiLoop = do
               uiLoop
 
 -- Process the diffenent commands.
-uiCommands :: T.Text -> [T.Text] -> StateT UiState IO ()
+uiCommands :: Text -> [Text] -> UiMonad ()
 uiCommands cmd params = do
     case cmd of
       "load"  -> uiLoadHss params
@@ -100,51 +105,45 @@ uiCommands cmd params = do
       -- The `end`command is processed in the uiLoop Function above.
 
 -- Change directory for reading files
--- uiCd :: (MonadState UiState m, MonadIO m) => [T.Text] -> m ()
-uiCd :: [T.Text] -> StateT UiState IO ()
-uiCd parms = (liftIO $ cdVerify parms) >>= report
+uiCd :: [Text] -> UiMonad ()
+uiCd parms = runExceptT (
+    verifyLength1 "cd" (T.unpack <$> parms) >>= verifyDirExists >>= doCD)
+      >>= report
   where
-    cdVerify :: [T.Text] -> IO (Either T.Text FilePath)
-    cdVerify toks =
-      runExceptT $ verifyLength1 "cd" (T.unpack <$>toks) >>= verifyDirExists
-    report :: (MonadState UiState m, MonadIO m) => Either T.Text  FilePath -> m ()
-    report (Right fp) = liftIO $ setCurrentDirectory fp
-    report (Left e)   = liftIO $ T.putStrLn  e
+    doCD :: FilePath -> UiVerifyMonad ()
+    doCD fp = liftIO $ setCurrentDirectory fp >>  pure ()
 
--- TODO Needs still a lot of improvments !!!!!
---      Validation of readability of numeric data
---      Same dimension for all hss entries etc etc
+-- TODO Same dimension for all hss entries etc etc
+
+
 -- Read the halfspaces from a file
-uiLoadHss :: [T.Text] -> StateT UiState IO ()
-uiLoadHss parms = (liftIO $ load parms) >>= report
+uiLoadHss :: [Text] -> UiMonad ()
+uiLoadHss parms = runExceptT
+    (verifyLength1 "load" parms >>= verifyFileExists >>= verifyLoad >>= doLoad)
+     >>= report
   where
-    load :: [T.Text] -> IO (Either T.Text [VU.Vector Double])
-    load toks = runExceptT $
-        verifyLength1 "load" toks >>=
-          verifyFileExists >>=
-          verifyLoad
-    report :: (MonadState UiState m, MonadIO m) => Either T.Text [VU.Vector Double] -> m ()
-    report (Right vecs) = do
+    doLoad  :: [VU.Vector Double] -> UiVerifyMonad ()
+    doLoad vecs = do
       let hss = Halfspace <$> vecs
       liftIO $ mapM_ putStrLn $ map show hss
       putHss hss
-    report (Left e) = liftIO $ T.putStrLn e
-    verifyLoad :: FilePath -> ExceptT T.Text IO [VU.Vector Double]
+    -- report (Left e) = liftIO $ T.putStrLn e
+    verifyLoad :: FilePath -> UiVerifyMonad [VU.Vector Double]
     verifyLoad path = do
       liftIO $ putStrLn ("Reading file " <> path)
       contents <- liftIO $ T.readFile path
       verifyVectors $ parseLine <$> T.lines contents
-    parseLine :: T.Text -> V.Vector (Maybe Double)     -- The outer Maybe is for unfoldr
-    parseLine l = V.unfoldr step (skipBlanks l)        -- The inner for error handling!
+    parseLine :: Text -> V.Vector (Maybe Double)     -- The outer Maybe is for unfoldr
+    parseLine l = V.unfoldr step (skipBlanks l)      -- The inner for error handling!
       where
-        step :: T.Text -> Maybe (Maybe Double, T.Text)
+        step :: Text -> Maybe (Maybe Double, Text)
         step "" = Nothing
         step !s = case T.double s of
             Left _ -> Just $ (Nothing , "")
             Right (!d, !t) -> Just $ (Just d, skipBlanks t)
-        skipBlanks :: T.Text -> T.Text
+        skipBlanks :: Text -> Text
         skipBlanks = T.dropWhile (isSpace)
-    verifyVectors :: [V.Vector (Maybe Double)] -> ExceptT T.Text IO [VU.Vector Double]
+    verifyVectors :: [V.Vector (Maybe Double)] -> UiVerifyMonad [VU.Vector Double]
     verifyVectors vecs = do
         let toUnboxed :: V.Vector (Maybe Double) -> VU.Vector Double
             toUnboxed = VG.convert . V.map fromJust
@@ -210,35 +209,27 @@ uiDisplay = do
     liftIO $ display dparms $ polyHsi2Vis poly
 
 -- Process the `size` input
-uiSize :: (MonadState UiState m, MonadIO m) => [T.Text] -> m()
-uiSize params = (liftIO $ verifySize params) >>= report
+uiSize :: [Text] -> UiMonad ()
+uiSize params =
+       runExceptT (verifyLength "size" 2 params >>= verifyNumTokens >>= doSize) >>= report
   where
-    verifySize :: [T.Text] -> IO (Either T.Text (VU.Vector Double))
-    verifySize toks =
-       runExceptT $ (verifyLength "size" 2 toks) >>= verifyNumTokens
-    report :: (MonadState UiState m, MonadIO m) => Either T.Text (VU.Vector Double) -> m ()
-    report (Right vec) = do
+    doSize :: VU.Vector Double -> UiVerifyMonad ()
+    doSize vec = do
         dparms <- gets uiDparms
         putDparm $ fupd vec dparms
-      where
-        fupd :: VU.Vector Double -> DispParams -> DispParams
-        fupd v = dpSetSize (P2 (VU.head v) (VU.last v))
-    report (Left e) = liftIO $ T.putStrLn e
-
+    fupd :: VU.Vector Double -> DispParams -> DispParams
+    fupd v = dpSetSize (P2 (VU.head v) (VU.last v))
 
 -- Set the projection direction
-uiPdir :: (MonadState UiState m, MonadIO m) => [T.Text] -> m()
-uiPdir params = (liftIO $ verifyPdir params) >>= report
+uiPdir :: [Text] -> UiMonad ()
+uiPdir params = runExceptT
+        (verifyLength "size" 2 params >>= verifyNumTokens >>= doPdir)
+         >>= report
   where
-    verifyPdir :: [T.Text] -> IO (Either T.Text (VU.Vector Double))
-    verifyPdir toks =
-        runExceptT $ (verifyLength "size" 2 toks) >>= verifyNumTokens
-    report :: (MonadState UiState m, MonadIO m) => Either T.Text (VU.Vector Double) -> m ()
-    report (Right vec) = do
+    doPdir :: VU.Vector Double -> UiVerifyMonad ()
+    doPdir vec = do
         dparms <- gets uiDparms
         putDparm $ dpSetPdir vec dparms
-    report (Left e) = liftIO $ T.putStrLn e
-
 
 -- TODO: Validate halfspaces: Are there any halfspaces and have all the same dimension
 -- validateHss
@@ -246,8 +237,14 @@ uiPdir params = (liftIO $ verifyPdir params) >>= report
 -- ---------------------------------------------------------------------------------
 -- General validation functions
 -- ---------------------------------------------------------------------------------
+
+-- report the verification errors
+report :: (MonadState UiState m, MonadIO m) => Either Text () -> m ()
+report (Left e) = liftIO $ T.putStrLn e
+report (Right _) = return ()
+
 -- Verify whether a file exists
-verifyFileExists :: (MonadIO m, MonadError T.Text m) => T.Text -> m FilePath
+verifyFileExists :: Text -> UiVerifyMonad FilePath
 verifyFileExists fn = do
     bExits <- liftIO $ doesFileExist $ T.unpack fn
     if bExits
@@ -255,34 +252,34 @@ verifyFileExists fn = do
        else throwError $ "File `" <> fn <> "` doesn't exist"
 
 -- Verify whether a directory exists
-verifyDirExists :: (MonadIO m, MonadError T.Text m) => FilePath -> m FilePath
+verifyDirExists :: FilePath -> UiVerifyMonad FilePath
 verifyDirExists dn = do
     bExits <- liftIO $ doesDirectoryExist dn
     if bExits
        then return dn
        else throwError $ "Directory `" <> T.pack  dn <> "` doesn't exist"
 
-
-verifyNumTokens :: [T.Text] -> ExceptT T.Text IO  (VU.Vector Double)
+-- Verify that the tookens are numeric, and collect them in a Double vector
+verifyNumTokens :: [Text] -> UiVerifyMonad (VU.Vector Double)
 verifyNumTokens toks = do
     let part = partition isNothing $ parse <$> toks
     if null (fst part)
          then return $ VU.fromList $ fromJust <$> snd part
          else throwError $ "Not all tokens are numeric"
   where
-    parse :: T.Text -> Maybe Double
+    parse :: Text -> Maybe Double
     parse tok = case T.double tok of
         Left _        -> Nothing
         Right (!d, _) -> Just d
 
-verifyLength1 :: T.Text -> [a] -> ExceptT T.Text IO  (a)
+verifyLength1 :: Text -> [a] -> UiVerifyMonad a
 verifyLength1  msg toks =
     if length toks == 1
         then return $ head toks
         else throwError $ msg <> " expects 1 parameter"
 
-verifyLength :: T.Text -> Int -> [a] -> ExceptT T.Text  IO [a]
+verifyLength :: Text -> Int -> [a] -> UiVerifyMonad [a]
 verifyLength  msg len toks =
     if length toks == len
         then return toks
-        else throwError $ msg <> T.pack (" expects " <> show len <> " parameters")
+        else throwError $ msg <> T.pack (" expects " <> show len <> " parameter(s")
