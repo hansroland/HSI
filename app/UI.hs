@@ -223,7 +223,7 @@ uiSize params =
 -- Set the projection direction
 uiPdir :: [Text] -> UiMonad ()
 uiPdir params = runExceptT
-        (verifyLength "size" 2 params >>= verifyNumTokens >>= doPdir)
+        (verifyLength "pdir" 3 params >>= verifyNumTokens >>= doPdir)
          >>= report
   where
     doPdir :: VU.Vector Double -> UiVerifyMonad ()
