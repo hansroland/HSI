@@ -81,7 +81,9 @@ library libhsi
         blaze-svg,
         blaze-html,
         open-browser,
-        text
+        text,
+        errors,
+        exceptions
     hs-source-dirs:
     default-language: Haskell2010
     ghc-options:         -Wall
@@ -106,7 +108,8 @@ executable hsi
         libdag,
         libhsi,
         directory,
-        errors
+        errors,
+        exceptions
 
     hs-source-dirs:   app
     default-language: Haskell2010

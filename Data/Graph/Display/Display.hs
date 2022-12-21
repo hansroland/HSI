@@ -17,6 +17,9 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as V
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
+import Data.Text (Text)
+import qualified Data.Text.IO as T
+import Control.Monad.Except
 
 -- And IndexedEdge is an edge with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
@@ -42,7 +45,12 @@ display dparms poly = do
         dag = visPoly pdir poly
         linesPoly = drawObjToLines $ drawObjCenter dim $ mkDrawObj dparms dag
         linesRect = drawObjToLines $ mkFrameRect dparms
-    plot dparms (linesRect <> linesPoly)
+    runExceptT (plot dparms (linesRect <> linesPoly)) >>= report
+  where
+    report :: (MonadIO m) => Either Text () -> m ()
+    report (Left e) = liftIO $ T.putStrLn e
+    report (Right _) = return ()
+
 
 -- Transform a Dag into aDrawObj
 mkDrawObj :: DispParams -> VisDag -> DrawObj

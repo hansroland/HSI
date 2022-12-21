@@ -8,6 +8,9 @@ import Data.Graph.Display.Data
 import Data.Graph.Display.DispParams
 import Data.Graph.Display.Point2
 
+import Data.Text (Text)
+import qualified Data.Text as T
+
 -- imports for SVG
 import Text.Blaze.Svg11 ( line, svg, Svg, (!) )
 import Text.Blaze.Svg11.Attributes
@@ -24,20 +27,27 @@ import Text.Blaze.Html.Renderer.Text ( renderHtml )
 import qualified Data.Text.Lazy.IO as TIO
 import Web.Browser(openBrowser)
 
+import Control.Monad.Except
+import Control.Error (handleExceptT)
+import Control.Monad.Catch
+
+-- General cheap error handler
+handler :: SomeException -> Text
+handler e = T.pack $ show e
+
 
 -- write the lines of the drawing as an HTML/svg to a file
 -- Here we also change the y-coordinate.
 -- Normally the origin is botton left, however in html the
 -- origin is top left. Here we change.
-plot :: DispParams ->  [Line] -> IO ()
+plot :: (MonadIO m, MonadCatch m ) => DispParams ->  [Line] -> ExceptT Text m ()
 plot dparms lns = do
     let maxy = round $ y $ dpSize dparms
         svgLines = map (lineToSvg maxy) lns
         htmlPage = page dparms svgLines
         filePath = dpFilepath dparms
-    TIO.writeFile filePath $ renderHtml $ htmlPage
-    -- putStr $ Pretty.renderHtml $ htmlPage
-    openBrowser filePath >>= print
+    handleExceptT handler $ liftIO $ TIO.writeFile filePath $ renderHtml $ htmlPage
+    handleExceptT handler $ liftIO $ openBrowser filePath >>= print
 
 -- Convert a Line to a Svg action
 lineToSvg :: Int -> Line -> Svg
