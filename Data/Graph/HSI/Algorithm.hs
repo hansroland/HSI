@@ -65,7 +65,7 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     calcRelPosVertex :: Halfspace -> VU.Vector Double -> RelPos
     calcRelPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
       where
-        dotp = VU.sum $ VU.zipWith (*) (VU.init vs) vertex
+        dotp = sp (VU.init vs) vertex
         relPos :: Double -> RelPos
         relPos x
             | x < -eps = relPosM

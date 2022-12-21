@@ -21,12 +21,11 @@ sp :: VU.Vector Double -> VU.Vector Double -> Double
 sp = (VU.sum .) . VU.zipWith (*)
 -- TODO: Use this function as a central scalarprocuct function !!!!! search on zipWith
 
+-- Normalize a vector
 normalize :: VU.Vector Double -> VU.Vector Double
 normalize vs =
-    let ivs = VU.init vs
-        d = sqrt (VU.sum $ VU.zipWith (*) ivs ivs)
-        norm = VU.map (/ d) ivs
-    in VU.snoc norm $ VU.last vs
+    let d = sqrt $ sp vs vs
+    in  VU.map (/ d) vs
 
 -- Conversions from Boxed to Unboxed vectors and vice versa
 -- Should be deleted, when we have a matirx with unboxed elements

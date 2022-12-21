@@ -17,7 +17,6 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as V
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
-import Data.Graph.HSI.Utils (normalize)
 
 -- And IndexedEdge is an edge with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
@@ -190,11 +189,10 @@ rotvec = VU.fromList [0.5, 0.5, 0 ]
 -- calculate a matrix that transforms the input vector to 1 0 0.
 drehma :: VU.Vector Double -> Matrix Double
 drehma tv0 =
-    let d0 = sqrt $ VU.sum $ VU.zipWith (*) tv0 tv0
-        tv = VU.map (/d0) tv0
+    let tv = normalize tv0
         ltv = VU.toList tv
         tvt = VU.tail tv
-        d  = sqrt $ VU.sum $ VU.zipWith (*) tvt tvt
+        d  = sqrt $ sp tvt tvt
         ca  = if d == 0 then 1 else (VU.last tv) / d
         sa  = if d == 0 then 0 else -1 * ltv!!1 / d
         cb :: Double

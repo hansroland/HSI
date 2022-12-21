@@ -45,18 +45,17 @@ toVector :: Halfspace -> Vector Double
 toVector (Halfspace vs) = vs
 
 -- Normalize the vector of a Halfspace
+-- To normalize, we remove the dist part of the vector!
 hsNormalize :: Halfspace -> Halfspace
 hsNormalize (Halfspace vs) =
-    let ivs = VU.init vs
-        d = sqrt (VU.sum $ VU.zipWith (*) ivs ivs)
-        norm = VU.map (/ d) ivs
+    let norm = normalize $ VU.init vs
     in Halfspace $ VU.snoc norm $ VU.last vs
 
 -- Distance of a Point from a halfspace
 distance :: Halfspace -> Vector Double -> Double
 distance hs point =
     let hsv = normalize $ toVector hs
-        dotp = VU.sum $ VU.zipWith (*) (VU.init hsv) point
+        dotp = sp (VU.init hsv) point
     in  dotp - VU.last point
 
 -- Dimension of a halfspace
