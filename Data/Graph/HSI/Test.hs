@@ -7,7 +7,7 @@ module Data.Graph.HSI.Test (
     -- Halfspace
     Halfspace(..),
     hsFromList,
-    normalize,
+    hsNormalize,
     -- Polytope
     Polytope(..),
     polyInsertHalfspace,

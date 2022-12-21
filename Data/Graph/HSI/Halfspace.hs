@@ -8,6 +8,7 @@ import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
 import Data.EnumMap.Strict(EnumMap)
 import qualified Data.EnumMap.Strict as Map
+import Data.Graph.HSI.Utils
 
 -- Data type to store a Halfspace
 -- A halfspace ax + by + cz + d >= 0 is stored as Vector [a,b,c,d]
@@ -44,8 +45,8 @@ toVector :: Halfspace -> Vector Double
 toVector (Halfspace vs) = vs
 
 -- Normalize the vector of a Halfspace
-normalize :: Halfspace -> Halfspace
-normalize (Halfspace vs) =
+hsNormalize :: Halfspace -> Halfspace
+hsNormalize (Halfspace vs) =
     let ivs = VU.init vs
         d = sqrt (VU.sum $ VU.zipWith (*) ivs ivs)
         norm = VU.map (/ d) ivs
@@ -54,7 +55,7 @@ normalize (Halfspace vs) =
 -- Distance of a Point from a halfspace
 distance :: Halfspace -> Vector Double -> Double
 distance hs point =
-    let hsv = toVector $ normalize hs
+    let hsv = normalize $ toVector hs
         dotp = VU.sum $ VU.zipWith (*) (VU.init hsv) point
     in  dotp - VU.last point
 

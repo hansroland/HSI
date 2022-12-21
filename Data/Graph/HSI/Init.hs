@@ -6,7 +6,7 @@ module Data.Graph.HSI.Init (mkPyramid, mkTriangle)
 import Data.Graph.Dag
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.RelPos
-import Data.Graph.HSI.Halfspace ( HsKey(..), Dim(..), HsMap, hsFromList, normalize )
+import Data.Graph.HSI.Halfspace ( HsKey(..), Dim(..), HsMap, hsFromList, hsNormalize )
 import Data.Graph.HSI.Polytope
 
 import qualified Data.Vector.Unboxed as VU
@@ -90,7 +90,7 @@ mkTriangleDag =  addNonvert 1 [2,3,4] 2 []
 hsTri :: HsMap
 hsTri = Map.fromAscList $ zip [2..] hsList
      where
-          hsList = map (normalize . hsFromList )
+          hsList = map (hsNormalize . hsFromList )
                [[ sqrt2h,  -sqrt2h, -sqrt2],   --2
                [ -sqrt2h, -sqrt2h, -sqrt2],    --3
                [0, 1, -2] ]                    --4

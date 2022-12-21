@@ -7,6 +7,7 @@ import Data.Graph.HSI.Face
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Utils
+import Data.Foldable ( foldlM )
 
 import Data.Graph.Dag
 
@@ -18,6 +19,10 @@ import Data.Set (Set)
 import Data.List ( (\\) )
 import Data.Maybe (fromJust)
 import Control.Monad.State.Strict ( State, unless, when )
+
+-- Calculate polytope from halfspaces
+hsiPoly :: HsiPolytope -> [Halfspace] -> Either String HsiPolytope
+hsiPoly poly hss = foldlM hsiStep poly hss
 
 -- Apply one single halfspace to the polytope
 hsiStep :: HsiPolytope -> Halfspace -> Either String HsiPolytope
@@ -32,7 +37,8 @@ checkRelHs relPos hs poly
       | relPos == relPosM                         = Left ("Polytope is empty" ++ show poly)
       | relPos == relPosP  || relPos == relPosP0  = pure poly   -- Halfspace is redundant
       | relPos == relPosMP || relPos == relPosM0P =
-        pure $ hsiIntersectH0
+        pure $ hsiRed
+             $ hsiIntersectH0
              $ polyInsertHalfspace hs
              $ hsiIntersectHMin poly
       | otherwise = Left ("checkRelHs got strange relPos:" ++ show relPos)

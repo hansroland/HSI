@@ -17,6 +17,7 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as V
 import Data.EnumMap.Strict (EnumMap)
 import qualified Data.EnumMap.Strict as Map
+import Data.Graph.HSI.Utils (normalize)
 
 -- And IndexedEdge is an edge with indexes to a vertice map
 data IndexedEdge = IndexedEdge {
@@ -144,8 +145,47 @@ scaleFactor (P2 x1 y1) (P2 x2 y2) =
         check d = d
     in  (min (x1/check x2) (y1/check y2))
 
-
 type Matrix a = V.Vector (VU.Vector Double)
+
+
+
+-- Rotation around x-axis
+--       1        0        0
+--       0     cos a    -sin a
+--       0     sin a     cos a
+--
+-- Rotation around z-axis
+    --  cos a     -sin a     0
+    --  sin a      cos a     0
+    --    0         0        1
+    --
+rot :: VU.Vector Double -> (Matrix Double, Matrix Double, Matrix Double)
+rot vec =
+    let vec1 = normalize vec
+        cx = vec1 VU.! 1
+        cy = vec1 VU.! 2
+        cz = vec1 VU.! 3
+        rotx = V.fromList [ VU.fromList [1,   0,    0],   --sin = cz, cos = cy
+                            VU.fromList [0, cy, -cz],
+                            VU.fromList [0, cz,  cy] ]
+        rotz = V.fromList [ VU.fromList [cx, -cy, 0],     -- sin = cy, cos = cx
+                            VU.fromList [cy,  cx, 0],
+                            VU.fromList [ 0,   0, 1] ]
+
+    in (rotx, rotx, rotz)
+
+q1 :: VU.Vector Double
+q1 = VU.fromList [0, 1, 2]
+
+q2 :: VU.Vector Double
+q2 = VU.fromList [0, 2, 2]
+
+rotvec :: VU.Vector Double
+rotvec = VU.fromList [0.5, 0.5, 0 ]
+
+-- drehmaNew :: VU.Vector Double -> Matrix Double
+-- drehmaNew vec = rotz vec
+
 
 -- calculate a matrix that transforms the input vector to 1 0 0.
 drehma :: VU.Vector Double -> Matrix Double

@@ -11,7 +11,7 @@ spec = do
   describe "Halfspace" $ do
     it "normalizing a vector" $ do
         let vec = VU.fromList [1,1,0,10]:: VU.Vector Double
-        show (normalize (Halfspace vec)) `shouldBe`
+        show (hsNormalize (Halfspace vec)) `shouldBe`
             "Halfspace [0.7071067811865475,0.7071067811865475,0.0,10.0]"
 
 
