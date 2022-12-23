@@ -15,7 +15,9 @@ module Data.Graph.HSI (
     nodeDim,
     nodeAttr,
     hsFromList,
-    visPoly
+    visPoly,
+    sp,
+    normalize
 )
 
 where
@@ -26,4 +28,5 @@ import Data.Graph.HSI.Polytope
 import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.Visibility
+import Data.Graph.HSI.Utils
 

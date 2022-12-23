@@ -3,9 +3,7 @@
 module Data.Graph.Display.Display where
 
 import Data.Graph.Dag
-
 import Data.Graph.HSI
-import Data.Graph.HSI.Utils                      -- TODO export needed functions from HSI
 
 import Data.Graph.Display.DispParams
 import Data.Graph.Display.Point2
@@ -50,7 +48,6 @@ display dparms poly = do
     report :: (MonadIO m) => Either Text () -> m ()
     report (Left e) = liftIO $ T.putStrLn e
     report (Right _) = return ()
-
 
 -- Transform a Dag into aDrawObj
 mkDrawObj :: DispParams -> VisDag -> DrawObj
@@ -135,17 +132,16 @@ drawObjToLines (DrawObj edges pmap) = map (segToLine pmap) edges
 drawObjCenter :: P2 -> DrawObj -> DrawObj
 drawObjCenter extBoard (drawObj@DrawObj{doVerts}) =
     let points = Map.elems doVerts
-        maxxy = foldr max_xy (P2 (-1E10) (-1E10)) points
-        minxy = foldr min_xy (P2 1E10 1E10) points
-        centImg = divBy (maxxy + minxy) 2
-        centBoard = divBy extBoard 2
-        extImg = maxxy - minxy
-        moveTo0 = flip (-) centImg
+        maxxy = foldr max_xy (P2 (-1E10) (-1E10)) points  -- the point with the biggest coordinae
+        minxy = foldr min_xy (P2 1E10 1E10) points        -- the point with the smallest coord
+        centImg = divBy (maxxy + minxy) 2                 -- The center of the points
+        centBoard = divBy extBoard 2                      -- The center of the board
+        extImg = maxxy - minxy                            -- The size of the image
+        moveToOrig = flip (-) centImg                      -- Move the center of image to the origin
         scale = multWith $ scaleFactor (multWith 0.85 extBoard) extImg
-        center = (+) centBoard
-    in  drawObj{doVerts = Map.map (center . scale . moveTo0) doVerts}
+        center = (+) centBoard                                -- Move the origin to the center of the board
+    in  drawObj{doVerts = Map.map (center . scale . moveToOrig) doVerts}
 
--- scaleFactor :: BoardExt ->  ImageExt -> Factor
 scaleFactor :: P2 -> P2 -> Double
 scaleFactor (P2 x1 y1) (P2 x2 y2) =
     let check 0 = 1
@@ -198,17 +194,18 @@ rotvec = VU.fromList [0.5, 0.5, 0 ]
 drehma :: VU.Vector Double -> Matrix Double
 drehma tv0 =
     let tv = normalize tv0
-        ltv = VU.toList tv
-        tvt = VU.tail tv
+        tv1 = tv VU.! 0
+        tv2 = tv VU.! 1
+        tv3 = tv VU.! 2
+        tvt = VU.tail tv         -- tv(2), tv(3)
         d  = sqrt $ sp tvt tvt
-        ca  = if d == 0 then 1 else (VU.last tv) / d
-        sa  = if d == 0 then 0 else -1 * ltv!!1 / d
-        cb :: Double
-        cb = ltv !! 0
-        sb = -sa* ltv!!1 + ca * ltv!!2
-        tm1 = VU.fromList [cb, -sa*sb, ca*sb]
-        tm2 = VU.fromList [0, ca, sa]
-        tm3 = VU.fromList [-sb, -sa*cb, cb*ca]
+        cosa = if d == 0 then 1 else  tv3 / d
+        sina = if d == 0 then 0 else -tv2 / d
+        cosb = tv1
+        sinb = -sina* tv2 + cosa * tv3
+        tm1 = VU.fromList [cosb, -sina*sinb, cosa*sinb]
+        tm2 = VU.fromList [0, cosa, sina]
+        tm3 = VU.fromList [-sinb, -sina*cosb, cosb*cosa]
     in  V.fromList [tm1,tm2,tm3]
 
 multvect :: Matrix Double -> VU.Vector Double -> VU.Vector Double
@@ -220,5 +217,10 @@ multvect mat vec = V.convert $ V.map (sp vec) mat
 -- TODO Zentralproj
 project :: DispParams -> VU.Vector Double -> P2
 project dparms vect3 =
-    let v2 = VU.tail vect3
-    in P2 (VU.head v2) (VU.last v2)
+    let
+        v1 = vect3 VU.! 0
+        v2 = vect3 VU.! 1
+        v3 = vect3 VU.! 2
+    in P2 v2 v3                             -- ALLE DURCHPROBIEREN !!
+    -- let v2 = VU.tail vect3
+    -- in P2 (VU.head v2) (VU.last v2)
