@@ -19,7 +19,8 @@ import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad.Except
 
--- And IndexedEdge is an edge with indexes to a vertice map
+-- And IndexedEdge is an edge with indexes to a vertice map.
+-- A verice map contains vertices indexed by NodeKeys.
 data IndexedEdge = IndexedEdge {
             segKey1 :: !NodeKey,
             segKey2 :: !NodeKey,
@@ -27,11 +28,12 @@ data IndexedEdge = IndexedEdge {
             }
         deriving (Show)
 
--- A DrawObj contains edges with indexes to the vertices.
+-- A DrawObj contains edges with indexes to a vertice map.
 --  This allows to do calculations with the vertices (eg center the drawing)
 --  with using every vertex once.
-data DrawObj = DrawObj {doEdges :: ![IndexedEdge], doVerts :: !PointMap}
+data DrawObj = DrawObj {drEdges :: ![IndexedEdge], drVerts :: !PointMap}
 
+type Matrix = V.Vector (VU.Vector Double)
 type VertMap = EnumMap NodeKey (Vector Double)
 type PointMap = EnumMap NodeKey P2
 
@@ -50,14 +52,18 @@ display dparms poly = do
     report (Right _) = return ()
 
 -- Transform a Dag into aDrawObj
+-- Project from 3-D to 2-D.
 mkDrawObj :: DispParams -> VisDag -> DrawObj
 mkDrawObj dparms dag =
     let pdir = dpPdir dparms
         -- calculate the rotation matrix
         rotmat = drehma pdir
+        -- rotate and project the z-axis
+        zaxis = multvect rotmat $ dpZaxis dparms
+        orientMap = adjustOrientation zaxis $ getVertMap dag
         -- rotate and project the vertexes
-        drawMap = Map.map (project dparms . multvect rotmat ) $ getVertMap dag
-    in DrawObj {doEdges = getEdges dag, doVerts = drawMap}
+        drawMap = Map.map (project dparms . multvect rotmat) orientMap
+    in DrawObj {drEdges = getEdges dag, drVerts = drawMap}
 
 -- Return an [Enum]Map with the 3-d vectors transfered with the diplay transformation of the vertices
 -- Use NodeKey as key.
@@ -130,8 +136,8 @@ drawObjToLines (DrawObj edges pmap) = map (segToLine pmap) edges
 --   2. Scale the drawing up or down to 85% of the size of the drawing board.
 --   3. Move the drawing into the center of the drawing board.
 drawObjCenter :: P2 -> DrawObj -> DrawObj
-drawObjCenter extBoard (drawObj@DrawObj{doVerts}) =
-    let points = Map.elems doVerts
+drawObjCenter extBoard (drawObj@DrawObj{drVerts}) =
+    let points = Map.elems drVerts
         maxxy = foldr max_xy (P2 (-1E10) (-1E10)) points  -- the point with the biggest coordinae
         minxy = foldr min_xy (P2 1E10 1E10) points        -- the point with the smallest coord
         centImg = divBy (maxxy + minxy) 2                 -- The center of the points
@@ -140,7 +146,7 @@ drawObjCenter extBoard (drawObj@DrawObj{doVerts}) =
         moveToOrig = flip (-) centImg                      -- Move the center of image to the origin
         scale = multWith $ scaleFactor (multWith 0.85 extBoard) extImg
         center = (+) centBoard                                -- Move the origin to the center of the board
-    in  drawObj{doVerts = Map.map (center . scale . moveToOrig) doVerts}
+    in  drawObj{drVerts = Map.map (center . scale . moveToOrig) drVerts}
 
 scaleFactor :: P2 -> P2 -> Double
 scaleFactor (P2 x1 y1) (P2 x2 y2) =
@@ -148,50 +154,16 @@ scaleFactor (P2 x1 y1) (P2 x2 y2) =
         check d = d
     in  (min (x1/check x2) (y1/check y2))
 
-type Matrix a = V.Vector (VU.Vector Double)
-
-
-
--- Rotation around x-axis
---       1        0        0
---       0     cos a    -sin a
---       0     sin a     cos a
---
--- Rotation around z-axis
-    --  cos a     -sin a     0
-    --  sin a      cos a     0
-    --    0         0        1
-    --
-rot :: VU.Vector Double -> (Matrix Double, Matrix Double, Matrix Double)
-rot vec =
-    let vec1 = normalize vec
-        cx = vec1 VU.! 1
-        cy = vec1 VU.! 2
-        cz = vec1 VU.! 3
-        rotx = V.fromList [ VU.fromList [1,   0,    0],   --sin = cz, cos = cy
-                            VU.fromList [0, cy, -cz],
-                            VU.fromList [0, cz,  cy] ]
-        rotz = V.fromList [ VU.fromList [cx, -cy, 0],     -- sin = cy, cos = cx
-                            VU.fromList [cy,  cx, 0],
-                            VU.fromList [ 0,   0, 1] ]
-
-    in (rotx, rotx, rotz)
-
-q1 :: VU.Vector Double
-q1 = VU.fromList [0, 1, 2]
-
-q2 :: VU.Vector Double
-q2 = VU.fromList [0, 2, 2]
-
-rotvec :: VU.Vector Double
-rotvec = VU.fromList [0.5, 0.5, 0 ]
-
--- drehmaNew :: VU.Vector Double -> Matrix Double
--- drehmaNew vec = rotz vec
-
+-- Adjust the drawing points, so the z-axis alywas points upwards.
+adjustOrientation :: Vector Double-> VertMap -> VertMap
+adjustOrientation zvect vertMap =
+    let z = VU.last zvect
+    in  if (z < -0.001)
+            then Map.map (VU.map ((-1) *)) vertMap
+            else vertMap
 
 -- calculate a matrix that transforms the input vector to 1 0 0.
-drehma :: VU.Vector Double -> Matrix Double
+drehma :: VU.Vector Double -> Matrix
 drehma tv0 =
     let tv = normalize tv0
         tv1 = tv VU.! 0
@@ -208,7 +180,7 @@ drehma tv0 =
         tm3 = VU.fromList [-sinb, -sina*cosb, cosb*cosa]
     in  V.fromList [tm1,tm2,tm3]
 
-multvect :: Matrix Double -> VU.Vector Double -> VU.Vector Double
+multvect :: Matrix -> VU.Vector Double -> VU.Vector Double
 multvect mat vec = V.convert $ V.map (sp vec) mat
 
 -- project a point from the 3-dim space to the 2-dim plane
@@ -217,10 +189,5 @@ multvect mat vec = V.convert $ V.map (sp vec) mat
 -- TODO Zentralproj
 project :: DispParams -> VU.Vector Double -> P2
 project dparms vect3 =
-    let
-        v1 = vect3 VU.! 0
-        v2 = vect3 VU.! 1
-        v3 = vect3 VU.! 2
-    in P2 v2 v3                             -- ALLE DURCHPROBIEREN !!
-    -- let v2 = VU.tail vect3
-    -- in P2 (VU.head v2) (VU.last v2)
+    let v2 = VU.tail vect3
+    in P2 (VU.head v2) (VU.last v2)
