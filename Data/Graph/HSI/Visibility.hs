@@ -39,7 +39,7 @@ visPoly direction poly =
             hyperDim = Dim (VU.length direction - 1)
             -- `hsmap` we get from the enclosing closure (where above)
             hskey = head $ nodeHsKeys node
-            hsVect = toVector $ hsmap Map.! hskey
+            hsVect = hsEquation $ hsmap Map.! hskey
             cosDirHsvect = sp dirvect hsVect
         putUstate $ calcNewVis $ nodeDim node
         -- if a face is visible, then all its kids are also visible.

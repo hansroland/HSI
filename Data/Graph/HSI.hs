@@ -15,6 +15,7 @@ module Data.Graph.HSI (
     nodeDim,
     nodeAttr,
     hsFromList,
+    hsFromVector,
     visPoly,
     sp,
     normalize
@@ -29,4 +30,3 @@ import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.Visibility
 import Data.Graph.HSI.Utils
-

@@ -65,7 +65,8 @@ polyInsertHalfspace hs poly@Polytope {polyHs} =
     in  (hsKey, poly {polyHs = newhsmap})
 
 
--- Calculate the vertex vector, from halfspace indices.
+-- Calculate the vertex coordinates, from halfspace indices.
+-- TODO write own equation solver without fromList / toList conversion !!
 calculateVertex :: HsMap -> [HsKey] -> VU.Vector Double
 calculateVertex hsmap keys =
     let fromRight :: Either String (VU.Vector Double) -> VU.Vector Double

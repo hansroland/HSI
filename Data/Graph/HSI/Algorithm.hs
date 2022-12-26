@@ -57,15 +57,14 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
       putDag $ dagUpdateNode dag key node {nodeAttr = relPosFace node dag}
     -- Calculate the relative position for a vertex
     relPosFace :: HsiNode -> HsiDag -> RelPos
-    relPosFace Node{nodeData = Vertex vec _ } _ = calcRelPosVertex hs vec
+    relPosFace Node{nodeData = Vertex vec _ } _ = calcRelPosVertex vec
     -- Calculate the relative position for a nonVertex
     relPosFace node@Node{nodeData = Nonvert _ _ } dag =
         mconcat $ (nodeAttr . dagNode dag) <$> nodeKids node
     -- Calculate relPos for a Vertex
-    calcRelPosVertex :: Halfspace -> VU.Vector Double -> RelPos
-    calcRelPosVertex (Halfspace vs) vertex = relPos $ roundDouble $ dotp - VU.last vs
+    calcRelPosVertex :: VU.Vector Double -> RelPos
+    calcRelPosVertex vertex = relPos $ roundDouble $ distance hs vertex
       where
-        dotp = sp (VU.init vs) vertex
         relPos :: Double -> RelPos
         relPos x
             | x < -eps = relPosM

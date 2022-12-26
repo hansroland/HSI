@@ -2,7 +2,7 @@ module Data.Graph.HSI.InitCube (mkCube) where
 
 import Data.Graph.Dag
 import Data.Graph.HSI.Face ( Face(..), HsiNode, HsiDag )
-import Data.Graph.HSI.Halfspace ( HsKey, hsFromList, Halfspace, Dim(..) )
+import Data.Graph.HSI.Halfspace ( HsKey, Halfspace, mkHs, Dim(..) )
 import Data.Graph.HSI.Polytope ( Polytope(..), HsiPolytope )
 
 import Data.List ( elemIndices )
@@ -117,7 +117,7 @@ mkCube dim = Polytope { polyHs = hsmap, polyDag = dag}
             else Nonvert(cfDim cf) hsKeys
 
     mkHalfspace :: CFace -> Halfspace
-    mkHalfspace cf = hsFromList $ (coHsCoeff <$> cf) ++  [coValMin]
+    mkHalfspace cf = mkHs (VU.fromList (coHsCoeff <$> cf)) coValMin
 
     mkVector :: CFace -> VU.Vector Double
     mkVector cf = VU.fromList $ (coCoordVal <$> cf)

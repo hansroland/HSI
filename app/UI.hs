@@ -126,7 +126,7 @@ uiLoadHss parms = runExceptT
     doLoad vecs = do
       let dim = 3
           initialCube = mkCube dim
-          hss = Halfspace <$> vecs
+          hss = hsFromVector <$> vecs
           phs = zip ([1..]::[Int]) vecs
       liftIO $ putStrLn $ show (length phs) <>  (" halfspaces: ")
       putHss hss
