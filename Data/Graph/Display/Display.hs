@@ -6,7 +6,7 @@ import Data.Graph.Dag
 import Data.Graph.HSI
 
 import Data.Graph.Display.DispParams
-import Data.Graph.Display.Point2
+import Data.Graph.Display.Vect2
 import Data.Graph.Display.Data
 import Data.Graph.Display.Html
 
@@ -58,12 +58,13 @@ mkDrawObj dparms dag =
     let pdir = dpPdir dparms
         -- calculate the rotation matrix
         rotmat = drehma pdir
+        -- rotate and project the vertexes
+        drawMap = Map.map (project . multvect rotmat) $ getVertMap dag
         -- rotate and project the z-axis
         zaxis = multvect rotmat $ dpZaxis dparms
-        orientMap = adjustOrientation zaxis $ getVertMap dag
-        -- rotate and project the vertexes
-        drawMap = Map.map (project dparms . multvect rotmat) orientMap
-    in DrawObj {drEdges = getEdges dag, drVerts = drawMap}
+        z2axis = (project . multvect rotmat) zaxis
+        rot2Map = adjustOrientation2 z2axis drawMap
+    in  DrawObj {drEdges = getEdges dag, drVerts = rot2Map}
 
 -- Return an [Enum]Map with the 3-d vectors transfered with the diplay transformation of the vertices
 -- Use NodeKey as key.
@@ -138,29 +139,32 @@ drawObjToLines (DrawObj edges pmap) = map (segToLine pmap) edges
 drawObjCenter :: P2 -> DrawObj -> DrawObj
 drawObjCenter extBoard (drawObj@DrawObj{drVerts}) =
     let points = Map.elems drVerts
-        maxxy = foldr max_xy (P2 (-1E10) (-1E10)) points  -- the point with the biggest coordinae
-        minxy = foldr min_xy (P2 1E10 1E10) points        -- the point with the smallest coord
-        centImg = divBy (maxxy + minxy) 2                 -- The center of the points
-        centBoard = divBy extBoard 2                      -- The center of the board
-        extImg = maxxy - minxy                            -- The size of the image
-        moveToOrig = flip (-) centImg                      -- Move the center of image to the origin
+        maxxy = foldr max_xy (point2 (-1E10) (-1E10)) points    -- the point with the biggest coordinae
+        minxy = foldr min_xy (point2 1E10 1E10) points          -- the point with the smallest coord
+        centImg = divBy (maxxy + minxy) 2                       -- The center of the points
+        centBoard = divBy extBoard 2                            -- The center of the board
+        extImg = maxxy - minxy                                  -- The size of the image
+        moveToOrig = flip (-) centImg                           -- Move the center of image to the origin
         scale = multWith $ scaleFactor (multWith 0.85 extBoard) extImg
         center = (+) centBoard                                -- Move the origin to the center of the board
     in  drawObj{drVerts = Map.map (center . scale . moveToOrig) drVerts}
 
 scaleFactor :: P2 -> P2 -> Double
-scaleFactor (P2 x1 y1) (P2 x2 y2) =
+scaleFactor v1 v2 =
     let check 0 = 1
         check d = d
-    in  (min (x1/check x2) (y1/check y2))
+    in  (min ((x v1)/check (x v2)) ((y v1)/check (y v2)))
 
--- Adjust the drawing points, so the z-axis alywas points upwards.
-adjustOrientation :: Vector Double-> VertMap -> VertMap
-adjustOrientation zvect vertMap =
-    let z = VU.last zvect
-    in  if (z < -0.001)
-            then Map.map (VU.map ((-1) *)) vertMap
-            else vertMap
+-- Adjust the drawing points, so the z-axis always points upwards.
+adjustOrientation2 :: Vector Double -> PointMap -> PointMap
+adjustOrientation2 zAxis pointMap =
+    let normZ = normalize zAxis
+        sina = normZ VU.! 0
+        cosa = normZ VU.! 1
+        rotMat = V.fromList [
+            VU.fromList [-cosa, sina],
+            VU.fromList [-sina, -cosa] ]
+    in Map.map (multvect rotMat) $ pointMap
 
 -- calculate a matrix that transforms the input vector to 1 0 0.
 drehma :: VU.Vector Double -> Matrix
@@ -187,7 +191,7 @@ multvect mat vec = V.convert $ V.map (sp vec) mat
 -- For parallel projection to 1 0 0, this is just using the y and z components
 -- For zentral proj, we need a little bit more.
 -- TODO Zentralproj
-project :: DispParams -> VU.Vector Double -> P2
-project dparms vect3 =
+project :: VU.Vector Double -> P2
+project vect3 =
     let v2 = VU.tail vect3
-    in P2 (VU.head v2) (VU.last v2)
+    in point2 (VU.head v2) (VU.last v2)

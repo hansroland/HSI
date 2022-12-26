@@ -6,7 +6,7 @@ module Data.Graph.Display.Html(plot) where
 import Data.Graph.Display.Data
 
 import Data.Graph.Display.DispParams
-import Data.Graph.Display.Point2
+import Data.Graph.Display.Vect2
 
 import Data.Text (Text)
 import qualified Data.Text as T

@@ -49,7 +49,7 @@ library libhsi
         Data.Graph.Display.Html,
         Data.Graph.Display.Data,
         Data.Graph.Display.DispParams,
-        Data.Graph.Display.Point2,
+        Data.Graph.Display.Vect2,
         Data.Graph.HSI.Polytope,
         Data.Graph.HSI.InitCube,
         Data.Graph.HSI.Algorithm

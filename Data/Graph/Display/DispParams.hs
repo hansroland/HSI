@@ -2,7 +2,7 @@
 
 module Data.Graph.Display.DispParams where
 
-import Data.Graph.Display.Point2
+import Data.Graph.Display.Vect2
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
