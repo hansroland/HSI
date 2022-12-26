@@ -26,10 +26,10 @@ import Data.Maybe (fromJust, isNothing)
 
 import Control.Monad.State.Strict
 import System.Directory
-import System.IO
 import Control.Monad.Except
 import Control.Error (handleExceptT)
 import Control.Monad.Catch
+import System.Console.Haskeline hiding (display)
 
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
@@ -64,16 +64,15 @@ uiInitState :: UiState
 uiInitState = UiState { uiPoly = Nothing, uiHss = [], uiDparms = dpInit}
 
 -- Loop over input till an `exit` command
-uiLoop :: UiMonad ()
+uiLoop :: InputT (StateT UiState IO) ()
 uiLoop = do
     strDir <- liftIO $ getCurrentDirectory
-    liftIO $ putStr ("hsi: " <> strDir <> ": ")
-    liftIO $ hFlush stdout
-    line <- liftIO $ T.getLine
-    let tokens = T.words line
+    strInp <- getInputLine  ("hsi: " <> strDir <> ": ")
+    when (isNothing strInp) $ uiLoop
+    let tokens = (T.words . T.pack . fromJust) strInp
     if null tokens
       then do
-        liftIO $ T.putStrLn "No input received"
+        outputStrLn "No input received"
         uiLoop
        else do
         let cmd = head tokens
@@ -81,7 +80,7 @@ uiLoop = do
         case cmd of
           "exit" -> return ()
           _ -> do
-              uiCommands cmd params
+              lift $ uiCommands cmd params
               uiLoop
 
 -- Process the diffenent commands.

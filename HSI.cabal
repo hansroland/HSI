@@ -109,7 +109,8 @@ executable hsi
         libhsi,
         directory,
         errors,
-        exceptions
+        exceptions,
+        haskeline
 
     hs-source-dirs:   app
     default-language: Haskell2010

@@ -4,8 +4,9 @@ module Main where
 
 import UI ( uiLoop, uiInitState )
 import Control.Monad.State.Strict ( execStateT )
+import System.Console.Haskeline
 
 main :: IO ()
 main = do
-   _ <- execStateT uiLoop uiInitState
-   return ()
+      _ <- execStateT (runInputT defaultSettings uiLoop) uiInitState
+      return ()
