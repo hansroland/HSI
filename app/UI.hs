@@ -34,7 +34,7 @@ import Control.Monad.Catch
 -- Application state of the UI
 -- All the data maintained and updated during the UI program
 data UiState = UiState {
-    uiPoly   :: HsiPolytope,
+    uiPoly   :: Maybe HsiPolytope,
     uiDparms :: DispParams,
     uiHss    :: [Halfspace]
     }
@@ -42,10 +42,10 @@ data UiState = UiState {
 type UiMonad a = StateT UiState IO a
 
 -- Store a new poly into the UiState
-putPoly :: MonadState UiState m => HsiPolytope -> m ()
-putPoly newpoly = do
+putPoly :: MonadState UiState m => Maybe HsiPolytope -> m ()
+putPoly mbNewpoly = do
   uiState <- get
-  put $ uiState {uiPoly = newpoly}
+  put $ uiState {uiPoly = mbNewpoly}
 
 -- Store new Halfspace data
 putHss :: MonadState UiState m => [Halfspace] -> m ()
@@ -61,7 +61,7 @@ putDparm dparms = do
 
 -- Initialize the application state
 uiInitState :: UiState
-uiInitState = UiState { uiPoly = mkCube 3, uiHss = [], uiDparms = dpInit}
+uiInitState = UiState { uiPoly = Nothing, uiHss = [], uiDparms = dpInit}
 
 -- Loop over input till an `exit` command
 uiLoop :: UiMonad ()
@@ -89,9 +89,7 @@ uiCommands :: Text -> [Text] -> UiMonad ()
 uiCommands cmd params = do
     case cmd of
       "load"  -> uiLoadHss params
-      "clear" -> uiClear
-      "hsi"   -> uiHsi
-      "draw"  -> uiDisplay
+      "draw"  -> uiDisplay params
       "size"  -> uiSize params
       "pdir"  -> uiPdir params
       "list"  -> uiList
@@ -115,19 +113,24 @@ uiCd parms = runExceptT (
 
 -- TODO Same dimension for all hss entries etc etc
 
-
--- Read the halfspaces from a file
+-- Read the halfspaces from a file and calculate the polytope
 uiLoadHss :: [Text] -> UiMonad ()
 uiLoadHss parms = runExceptT
-    (verifyLength1 "load" parms >>= verifyLoad >>= doLoad)
+             -- TODO check availability of hss before going to hsi
+             -- TODO check dimension of halfspace
+             -- TODO initialize initial cube !!
+    (verifyLength1 "load" parms >>= verifyLoad >>= doLoad >>= doHsi)
      >>= report
   where
-    doLoad  :: (MonadIO m, MonadState UiState m ) => [VU.Vector Double] -> ExceptT Text m ()
+    doLoad  :: (MonadIO m, MonadState UiState m ) => [VU.Vector Double] -> ExceptT Text m HsiPolytope
     doLoad vecs = do
-      let hss = Halfspace <$> vecs
-      let phs = zip ([1..]::[Int]) vecs
+      let dim = 3
+          initialCube = mkCube dim
+          hss = Halfspace <$> vecs
+          phs = zip ([1..]::[Int]) vecs
       liftIO $ putStrLn $ show (length phs) <>  (" halfspaces: ")
       putHss hss
+      return initialCube
     verifyLoad :: (MonadIO m, MonadCatch m) => Text -> ExceptT Text m [VU.Vector Double]
     verifyLoad textpath = do
       let path = T.unpack textpath
@@ -154,21 +157,21 @@ uiLoadHss parms = runExceptT
         if null errs
               then return $ toUnboxed <$> vecs
               else throwError $ T.pack ("Input errors in lines " ++ show (map fst errs))
-
--- Run the HSI algorithm on the halfspaces into the halfspace store
-uiHsi :: (MonadState UiState m, MonadIO m) => m()
-uiHsi = do
-  hss <- gets uiHss
-  poly0 <- gets uiPoly
-  case hsiPoly poly0 hss of
-    (Left msg)   -> liftIO $ putStrLn msg
-    (Right poly) -> do
-      liftIO $ do
-        putStrLn $ show $ polyStats poly
-        putStrLn $ show $ checkFormulaEuler poly
-      -- update state: remove halfspaces, add polytope
+    -- Run the HSI algorithm on the halfspaces into the halfspace store
+    doHsi :: (MonadIO m, MonadState UiState m ) => HsiPolytope -> ExceptT Text m ()
+    doHsi poly0 = do
+      hss <- gets uiHss
+      case hsiPoly poly0 hss of
+        (Left msg)   -> do
+          liftIO $ putStrLn msg
+          putPoly Nothing
+        (Right poly) -> do
+          liftIO $ do
+            putStrLn $ show $ polyStats poly
+            putStrLn $ show $ checkFormulaEuler poly
+          -- update state: remove halfspaces, add polytope
+          putPoly $ Just poly
       putHss []
-      putPoly poly
 
 -- List the current polytope in the UI State
 uiList :: (MonadState UiState m, MonadIO m) => m()
@@ -179,28 +182,29 @@ uiList = do
     if (null hslist)
         then liftIO $ putStrLn "(empty)"
         else liftIO $ mapM_ putStrLn $ map show hslist
-    --
-    liftIO $ putStrLn "\nPolytope"
-    poly <- gets uiPoly
-    liftIO $ putStrLn $ show poly
-    liftIO $ putStrLn $ show $ polyStats poly
-    liftIO $ putStrLn $ show $ checkFormulaEuler poly
-
--- Reset the application state
--- Reset the polytope and the halfspace store
-uiClear ::  (MonadState UiState m) => m()
-uiClear = get >>= uiReset
+    runExceptT
+      (verifyPoly >>= doListPoly)
+      >>= report
   where
-    uiReset :: (MonadState UiState m) => UiState -> m()
-    uiReset uiState = put $ uiState{ uiPoly = (mkCube 3), uiHss = [] }
+    doListPoly :: MonadIO m => HsiPolytope -> ExceptT Text m ()
+    doListPoly poly = liftIO $ do
+      putStrLn "\nPolytope"
+      putStrLn $ show poly
+      putStrLn $ show $ polyStats poly
+      putStrLn $ show $ checkFormulaEuler poly
 
 -- Display the current polytope with the current display parameters
-uiDisplay :: (MonadState UiState m, MonadIO m) => m()
-uiDisplay = do
-    dparms <- gets uiDparms
-    poly   <- gets uiPoly
-    -- Transform a HsiPolytope into a VisPolytope
-    liftIO $ display dparms $ polyHsi2Vis poly
+uiDisplay :: (MonadState UiState m, MonadIO m) => [Text] -> m()
+uiDisplay params = do
+    runExceptT
+      (verifyLength "draw" 0 params >> verifyPoly >>= doDisplay)
+      >>= report
+  where
+    doDisplay :: (MonadState UiState m, MonadIO m) => HsiPolytope -> ExceptT Text m ()
+    doDisplay poly = do
+      dparms <- gets uiDparms
+      -- Transform a HsiPolytope into a VisPolytope
+      liftIO $ display dparms $ polyHsi2Vis poly
 
 -- Process the `size` input
 uiSize :: [Text] -> UiMonad ()
@@ -261,3 +265,13 @@ verifyLength  msg len toks =
     if length toks == len
         then return toks
         else throwError $ msg <> T.pack (" expects " <> show len <> " parameter(s")
+
+-- Verify that there exists a polytope in the UIState
+verifyPoly :: (MonadState UiState m, MonadIO m) => ExceptT Text m HsiPolytope
+verifyPoly = do
+    mbPoly <- gets uiPoly
+    go mbPoly
+  where
+    go :: (MonadIO m) => Maybe HsiPolytope -> ExceptT Text m HsiPolytope
+    go (Just poly) = return poly
+    go  Nothing     = throwError ("No polytope has been calculated")
