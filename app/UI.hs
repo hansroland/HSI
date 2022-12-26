@@ -9,7 +9,7 @@ module UI where
 import Data.Graph.HSI
 
 import Data.Graph.Display.DispParams
-import Data.Graph.Display.Point2
+import Data.Graph.Display.Vect2
 import Data.Graph.HSI.InitCube
 import Data.Graph.Display.Display (display)
 
@@ -212,7 +212,7 @@ uiSize params =
         dparms <- gets uiDparms
         putDparm $ fupd vec dparms
     fupd :: VU.Vector Double -> DispParams -> DispParams
-    fupd v = dpSetSize (P2 (VU.head v) (VU.last v))
+    fupd v = dpSetSize (point2 (VU.head v) (VU.last v))
 
 -- Set the projection direction
 uiPdir :: [Text] -> UiMonad ()
