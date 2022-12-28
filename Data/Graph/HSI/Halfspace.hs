@@ -12,7 +12,7 @@ import Data.Graph.HSI.Utils
 
 -- Data type to store a Halfspace
 -- A halfspace ax + by + cz + d >= 0 is stored as Halfspace {hsV =[a,b,c], hsD = d}
-data Halfspace = Halfspace {hsV :: Vector Double, hsD :: Double}
+data Halfspace = Halfspace {hsV :: !(Vector Double), hsD :: !Double}
     deriving (Show)
 
 -- Datatype to store the dimension of a geometric object
@@ -32,10 +32,11 @@ mkHs v d = Halfspace {hsV = v, hsD= d}
 
 -- Create a Halfspace from a list of doubles.
 -- Checking the length of the list is the task of the input program
--- Note: Here we assume, that the length of the list has been checked!
+-- So, here we assume, that the length of the list has been checked!
 hsFromList :: [Double] -> Halfspace
 hsFromList cs = Halfspace {hsV = VU.fromList (init cs), hsD = last cs}
 
+-- Create a Halfspace from a vector of Doubles
 hsFromVector :: Vector Double -> Halfspace
 hsFromVector v = Halfspace {hsV = VU.init v, hsD = VU.last v}
 

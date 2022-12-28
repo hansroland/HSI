@@ -20,12 +20,12 @@ triangle21 =
 writeVisitingSequence :: NodeFunction Triangle2 () Int
 writeVisitingSequence (key, node) = do
     dag <- getDag
-    s <- getUstate
+    s <- getClState
     let (n, ss) = nodeData node
     let s1 = s + 1
-        newNode = nodeUpdateData (n, s1:ss) node
+        newNode = nodeSetData (n, s1:ss) node
     putDag $ dagUpdateNode dag key newNode
-    putUstate s1
+    putClState s1
 
 -- Postorder processing with single visit to node
 triangle22 :: Dag Triangle2 ()

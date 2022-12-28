@@ -36,7 +36,7 @@ handler :: SomeException -> Text
 handler e = T.pack $ show e
 
 
--- write the lines of the drawing as an HTML/svg to a file
+-- Write the lines of the drawing as a HTML/svg to a file
 -- Here we also change the y-coordinate.
 -- Normally the origin is botton left, however in html the
 -- origin is top left. Here we change.

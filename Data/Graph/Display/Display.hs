@@ -19,7 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad.Except
 
--- And IndexedEdge is an edge with indexes to a vertice map.
+-- An IndexedEdge is an edge with indexes to a vertice map.
 -- A verice map contains vertices indexed by NodeKeys.
 data IndexedEdge = IndexedEdge {
             segKey1 :: !NodeKey,

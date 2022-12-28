@@ -13,7 +13,10 @@ where
 import Data.Word ( Word8 )
 import Data.Bits ( Bits( (.|.) ) )
 
--- The location of a point or edge relative to a Halfspace
+-- The location of a face relative to a Halfspace
+-- The relative position for a vertex is either H+, H-, H0.
+-- The relative position of a non-vertex is the combination of the
+-- relative positions of it's sub-faces.
 newtype RelPos = RelPos Word8
      deriving Eq
 
@@ -34,6 +37,7 @@ instance Show RelPos where
         | x == relPosMP = "relPosMP"
         | x == relPosM0P = "relPosM0P"
     show (RelPos v) = "RelPos is wrong " ++ show v
+
 -- Possible position of a face relative to the Halfspace
 relPosP :: RelPos
 relPosP = RelPos 0x10

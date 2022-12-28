@@ -24,7 +24,7 @@ visPoly direction poly =
     visNode :: VU.Vector Double -> NodeFunction Face Visibility Visibility
     visNode  dirvect (nodekey, node) = do
         dag <- getDag
-        vis <- getUstate
+        vis <- getClState
         let -- if the scalarproduct beetween the direction vector and
             -- the hyper plane vector is positive, then the hyperplane is visible
             calcNewVis :: Dim -> Visibility
@@ -41,7 +41,7 @@ visPoly direction poly =
             hskey = head $ nodeHsKeys node
             hsVect = hsEquation $ hsmap Map.! hskey
             cosDirHsvect = sp dirvect hsVect
-        putUstate $ calcNewVis $ nodeDim node
+        putClState $ calcNewVis $ nodeDim node
         -- if a face is visible, then all its kids are also visible.
         when (vis == Visible && (nodeAttr node) == Hidden) $ do                                                            -- TODO: Use when !!
             let newNode = nodeSetAttr vis node

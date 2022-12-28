@@ -55,7 +55,7 @@ nodekeyVal cFace = foldr (+) 0 $ zipWith (*) (nkeyVal <$> cFace)  powers3
 
 -- Calculate the HsKeys of a CFace
 -- Map the HsKeys to negative numbers and 0.
--- Halfspaces from the user will be positive an numbered in user sequence .
+-- Halfspaces from the user will be positive a numbered in user sequence .
 cfHskeyVals :: CFace -> [HsKey]
 cfHskeyVals cf = hskey <$> poks
   where

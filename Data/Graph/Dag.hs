@@ -5,8 +5,8 @@ module Data.Graph.Dag ( Dag(..), NodeKey,
         NodeFunction,
         NodePredicate,
         -- DagAlgoData
-        getUstate,
-        putUstate,
+        getClState,
+        putClState,
         getDag,
         putDag,
         -- Dag construction
@@ -26,7 +26,7 @@ module Data.Graph.Dag ( Dag(..), NodeKey,
         -- Operations on Nodes
         nodeAddKey,
         nodeAddKeys,
-        nodeUpdateData
+        nodeSetData
 )
 where
 

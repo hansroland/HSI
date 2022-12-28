@@ -11,11 +11,12 @@ import Data.Vector.Unboxed (Vector)
 import Data.List(nub)
 
 -- A Face is and vertex, edge, hyperplane or side of a polytope
-data Face = Nonvert !Dim ![HsKey]
-          | Vertex !(Vector Double) ![HsKey]
-     deriving (Show)
+data Face = Nonvert !Dim ![HsKey]                   -- A Non-Vertex stores its dimension
+                                                    -- and the keys of the supporting Halfspaces
+          | Vertex !(Vector Double) ![HsKey]        -- A Vertex stores its coordiantes
+    deriving (Show)                                 -- and the keys of the supporting Halfspaces
 
-type HsiNode = Node Face RelPos       -- TODO Move to a better position !!!
+type HsiNode = Node Face RelPos
 type HsiDag = Dag Face RelPos
 
 type VisNode = Node Face Visibility
@@ -25,7 +26,7 @@ type VisDag = Dag Face Visibility
 data Visibility = Visible | Hidden
     deriving (Show, Eq)
 
--- Check, whether a this face is a vertex
+-- Check, whether a this face is a vertex or not
 isVertex :: Face -> Bool
 isVertex (Vertex _ _ ) = True
 isVertex _             = False
@@ -34,7 +35,7 @@ isVertex _             = False
 mkVertex :: [HsKey] -> (Vector Double) -> Face
 mkVertex hsKeys v = Vertex v hsKeys
 
--- Add an new Halfspace index to a Face
+-- Add a new Halfspace key to a Face
 addHsKey :: Face -> HsKey -> Face
 addHsKey (Nonvert dim keys) k = Nonvert dim $ nub $ k : keys
 addHsKey (Vertex vect keys) k = Vertex vect $ nub $ k : keys
@@ -43,7 +44,6 @@ addHsKey (Vertex vect keys) k = Vertex vect $ nub $ k : keys
 faceSetHsKeys :: [HsKey] -> Face -> Face
 faceSetHsKeys keys (Nonvert dim _) = Nonvert dim keys
 faceSetHsKeys keys (Vertex  vec _) = Vertex  vec keys
-
 
 -- Get the List of the HsKeys
 faceHsKeys :: Face -> [HsKey]
@@ -58,11 +58,11 @@ faceDim (Vertex _ _ ) = 0
 -- ----------------------------------------------------------------
 -- Face accessor function for nodes
 -- ----------------------------------------------------------------
--- return the dimension of a Face
+-- Return the dimension of a Face
 nodeDim :: Node Face a -> Dim
 nodeDim = faceDim . nodeData
 
--- return the keys to the Halfspace map
+-- Return the keys to the Halfspace map
 nodeHsKeys :: Node Face a -> [HsKey]
 nodeHsKeys = faceHsKeys . nodeData
 
