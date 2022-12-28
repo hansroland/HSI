@@ -2,7 +2,7 @@
 
 module DagTriangle4 where
 
-import Data.Graph.Dag
+import Data.Graph.HSI.Test
 
 type Triangle4 = (Bool,Int)
 

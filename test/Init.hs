@@ -1,16 +1,11 @@
 {-# Language NamedFieldPuns #-}
 
-module Data.Graph.HSI.Init (mkPyramid, mkTriangle)
+module Init (mkPyramid, mkTriangle)
     where
 
-import Data.Graph.Dag
-import Data.Graph.HSI.Face
-import Data.Graph.HSI.RelPos
-import Data.Graph.HSI.Halfspace ( HsKey(..), Dim(..), HsMap, hsFromList, hsNormalize )
-import Data.Graph.HSI.Polytope
+import Data.Graph.HSI.Test
 
 import qualified Data.Vector.Unboxed as VU
-
 import qualified Data.EnumMap.Strict as Map
 
 

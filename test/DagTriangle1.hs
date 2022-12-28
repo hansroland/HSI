@@ -1,6 +1,6 @@
 module DagTriangle1 where
 
-import Data.Graph.Dag
+import Data.Graph.HSI.Test
 
 type Triangle1 = (Int, Int, [Int])
 

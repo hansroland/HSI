@@ -1,5 +1,6 @@
 module HSISpec (spec) where
 
+import Init
 import Test.Hspec
 import Data.Graph.HSI.Test
 

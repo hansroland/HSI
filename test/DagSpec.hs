@@ -6,7 +6,7 @@ import DagTriangle1
 import DagTriangle2
 import DagTriangle4
 
-import Data.Graph.Dag
+import Data.Graph.HSI.Test
 
 spec :: Spec
 spec = do

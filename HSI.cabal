@@ -60,8 +60,6 @@ library libhsi
         Data.Graph.HSI.Face,
         Data.Graph.HSI.RelPos,
         Data.Graph.HSI.Utils,
-        Data.Graph.HSI.Init,
-
         Data.Graph.HSI.Visibility,
         Data.Graph.Dag,
         Data.Graph.Dag.Dag,
@@ -121,7 +119,8 @@ test-suite test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Spec.hs
-    Other-Modules:    DagSpec,
+    Other-Modules:    Init,
+                      DagSpec,
                       DagTriangle1,
                       DagTriangle2,
                       DagTriangle4
@@ -132,8 +131,8 @@ test-suite test
         base ^>=4.16.1.0,
         containers ^>=0.6.5.1,
         mtl ^>=2.2.2,
+        enummapset,
         matrix,
         vector,
         hspec,
-        libdag,
         libhsi

@@ -3,6 +3,7 @@ module InitSpec (spec) where
 
 import Test.Hspec
 
+import Init
 import Data.Graph.HSI.Test
 
 spec :: Spec
