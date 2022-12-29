@@ -18,6 +18,7 @@ import qualified Data.EnumMap.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad.Except
+import Data.Maybe(catMaybes)
 
 -- An IndexedEdge is an edge with indexes to a vertice map.
 -- A verice map contains vertices indexed by NodeKeys.
@@ -42,9 +43,10 @@ display :: DispParams -> VisPolytope -> IO ()
 display dparms poly = do
     let dim = dpSize dparms
         pdir = dpPdir dparms
+        showHidden = dpHidden dparms
         dag = visPoly pdir poly
-        linesPoly = drawObjToLines $ drawObjCenter dim $ mkDrawObj dparms dag
-        linesRect = drawObjToLines $ mkFrameRect dparms
+        linesPoly = drawObjToLines showHidden $ drawObjCenter dim $ mkDrawObj dparms dag
+        linesRect = drawObjToLines True $ mkFrameRect dparms
     runExceptT (plot dparms (linesRect <> linesPoly)) >>= report
   where
     report :: (MonadIO m) => Either Text () -> m ()
@@ -95,18 +97,21 @@ mkVisEdge :: Int -> Int -> IndexedEdge
 mkVisEdge k1 k2 = IndexedEdge (fromIntegral  k1) (fromIntegral k2) Visible
 
 -- Convert a IndexedEdge to a Line
-segToLine :: PointMap -> IndexedEdge -> Line
-segToLine pmap seg =
+segToLine :: Bool -> PointMap -> IndexedEdge -> Maybe Line
+segToLine showHidden pmap seg =
     let p1 = pmap Map.! segKey1 seg
         p2 = pmap Map.! segKey2 seg
         vx1 = round $ x p1
         vy1 = round $ y p1
         vx2 = round $ x p2
         vy2 = round $ y p2
-        style = case (segVis seg) of
+        vis = segVis seg
+        style = case vis of
             Visible -> Normal
             Hidden  -> Dotted
-    in Line {lix1= vx1, lix2=vx2, liy1=vy1, liy2=vy2, liStyle = style}
+    in if showHidden  || vis == Visible
+         then Just Line {lix1= vx1, lix2=vx2, liy1=vy1, liy2=vy2, liStyle = style}
+         else Nothing
 
 -- Create a rectangle to frame the drawing area.
 mkFrameRect :: DispParams -> DrawObj
@@ -129,8 +134,8 @@ mkRect x0 x1 y0 y1 =
     in DrawObj segs pmap
 
 -- convert a DrawObject to a list of Svgs
-drawObjToLines :: DrawObj -> [Line]
-drawObjToLines (DrawObj edges pmap) = map (segToLine pmap) edges
+drawObjToLines :: Bool -> DrawObj -> [Line]
+drawObjToLines showHidden (DrawObj edges pmap) = catMaybes $ map (segToLine showHidden pmap) edges
 
 -- Transform the drawObj so it fits on the drawing area
 --   1. Move the center of the drawing to the origin.
