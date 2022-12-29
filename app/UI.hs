@@ -108,8 +108,7 @@ uiCd parms = runExceptT (
       >>= report
   where
     doCD :: (MonadIO m, MonadCatch m) => FilePath -> ExceptT Text m ()
-    doCD fp = do
-      handleExceptT handler $ liftIO $ setCurrentDirectory fp
+    doCD fp = handleExceptT handler $ liftIO $ setCurrentDirectory fp
 
 -- TODO Same dimension for all hss entries etc etc
 
@@ -212,9 +211,7 @@ uiSize params =
        runExceptT (verifyLength "size" 2 params >>= verifyNumTokens >>= doSize) >>= report
   where
     doSize :: (MonadIO m, MonadState UiState m) => VU.Vector Double -> ExceptT Text m ()
-    doSize vec = do
-        dparms <- gets uiDparms
-        putDparm $ fupd vec dparms
+    doSize vec = gets uiDparms >>= putDparm . fupd vec
     fupd :: VU.Vector Double -> DispParams -> DispParams
     fupd v = dpSetSize (point2 (VU.head v) (VU.last v))
 
@@ -225,9 +222,7 @@ uiPdir params = runExceptT
          >>= report
   where
     doPdir :: (MonadIO m, MonadState UiState m) => VU.Vector Double -> ExceptT Text m ()
-    doPdir vec = do
-        dparms <- gets uiDparms
-        putDparm $ dpSetPdir vec dparms
+    doPdir vec = gets uiDparms >>= putDparm . dpSetPdir vec
 
 uiHidden :: [Text] -> UiMonad ()
 uiHidden params = runExceptT
@@ -235,10 +230,7 @@ uiHidden params = runExceptT
      >>= report
   where
     doHidden :: (MonadIO m, MonadState UiState m) => Bool -> ExceptT Text m ()
-    doHidden showHidden = do
-      dparms <- gets uiDparms
-      putDparm $ dpSetHidden showHidden dparms
-
+    doHidden showHidden = gets uiDparms >>= putDparm . dpSetHidden showHidden
 
 -- TODO: Validate halfspaces: Are there any halfspaces and have all the same dimension
 -- validateHss
