@@ -87,13 +87,14 @@ uiLoop = do
 uiCommands :: Text -> [Text] -> UiMonad ()
 uiCommands cmd params = do
     case cmd of
-      "load"  -> uiLoadHss params
-      "draw"  -> uiDisplay params
-      "size"  -> uiSize params
-      "pdir"  -> uiPdir params
-      "list"  -> uiList
-      "cd"    -> uiCd params
-      _       -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
+      "load"   -> uiLoadHss params
+      "draw"   -> uiDisplay params
+      "size"   -> uiSize params
+      "pdir"   -> uiPdir params
+      "hidden" -> uiHidden params
+      "list"   -> uiList
+      "cd"     -> uiCd params
+      _        -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
 
 -- General cheap error handler
@@ -228,6 +229,17 @@ uiPdir params = runExceptT
         dparms <- gets uiDparms
         putDparm $ dpSetPdir vec dparms
 
+uiHidden :: [Text] -> UiMonad ()
+uiHidden params = runExceptT
+    (verifyLength1 "hidden" params >>= verifyBoolean "hidden" >>= doHidden)
+     >>= report
+  where
+    doHidden :: (MonadIO m, MonadState UiState m) => Bool -> ExceptT Text m ()
+    doHidden showHidden = do
+      dparms <- gets uiDparms
+      putDparm $ dpSetHidden showHidden dparms
+
+
 -- TODO: Validate halfspaces: Are there any halfspaces and have all the same dimension
 -- validateHss
 
@@ -253,7 +265,7 @@ verifyNumTokens toks = do
         Left _        -> Nothing
         Right (!d, _) -> Just d
 
-verifyLength1 :: (MonadIO m) => Text -> [a] -> ExceptT Text m  a
+verifyLength1 :: (MonadIO m) => Text -> [a] -> ExceptT Text m a
 verifyLength1  msg toks =
     if length toks == 1
         then return $ head toks
@@ -274,3 +286,8 @@ verifyPoly = do
     go :: (MonadIO m) => Maybe HsiPolytope -> ExceptT Text m HsiPolytope
     go (Just poly) = return poly
     go  Nothing     = throwError ("No polytope has been calculated")
+
+verifyBoolean :: (MonadState UiState m, MonadIO m) => Text -> Text -> ExceptT Text m Bool
+verifyBoolean _  "0" = return False
+verifyBoolean _  "1" = return True
+verifyBoolean msg _   = throwError $ msg <> " expects '0' or '1'"
