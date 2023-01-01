@@ -75,12 +75,12 @@ library libhsi
         matrix,
         vector,
         libdag,
-        svg-builder,
         blaze-svg,
         blaze-html,
         open-browser,
         text,
         errors,
+        filepath,
         exceptions
     hs-source-dirs:
     default-language: Haskell2010
@@ -108,6 +108,7 @@ executable hsi
         directory,
         errors,
         exceptions,
+        filepath,
         haskeline
 
     hs-source-dirs:   app

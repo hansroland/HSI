@@ -12,7 +12,9 @@ data DispParams = DispParams {
     dpSize      :: P2,                     -- Size (in html points) of the whole drawing
     dpPdir      :: Vector Double,          -- Projection direction
     dpZaxis     :: Vector Double,          -- The z-axis for correct orientation
-    dpFilepath  :: FilePath,               -- The FilePath to write the HTML file
+    dpIndir     :: FilePath,               -- Filepath to the input directory
+    dpOutdir    :: FilePath,               -- Filepath to the outpur directory
+    dpFilename  :: FilePath,               -- The FilePath to write the HTML file
     dpHidden    :: Bool                    -- True = Show hidden lines
     -- dpJproj :: Int,
     -- dpAuge  :: Vector Double
@@ -22,7 +24,9 @@ dpInit :: DispParams
 dpInit = DispParams
     { dpSize = point2 400 300,
       dpPdir = VU.fromList [3,1,-1],
-      dpFilepath = "HSI00.html",              -- TODO: Take name from polytope !!
+      dpIndir = "examples",
+      dpOutdir = "./",
+      dpFilename = "poly",
       dpZaxis = VU.fromList [0,0,1],
       dpHidden = True
     }
@@ -36,3 +40,12 @@ dpSetPdir pdir dparms = dparms { dpPdir = pdir }
 
 dpSetHidden :: Bool -> DispParams -> DispParams
 dpSetHidden b dparms = dparms { dpHidden = b}
+
+dpSetIndir :: FilePath -> DispParams -> DispParams
+dpSetIndir dir dparms = dparms { dpIndir = dir}
+
+dpSetOutdir :: FilePath -> DispParams -> DispParams
+dpSetOutdir dir dparms = dparms { dpOutdir = dir}
+
+dpSetFilename :: FilePath -> DispParams -> DispParams
+dpSetFilename name dparms = dparms {dpFilename = name}

@@ -23,6 +23,7 @@ import qualified Data.Vector.Generic    as VG
 import Data.List(partition)
 import Data.Char (isSpace)
 import Data.Maybe (fromJust, isNothing)
+import System.FilePath
 
 import Control.Monad.State.Strict
 import System.Directory
@@ -93,7 +94,8 @@ uiCommands cmd params = do
       "pdir"   -> uiPdir params
       "hidden" -> uiHidden params
       "list"   -> uiList
-      "cd"     -> uiCd params
+      "indir"  -> uiIndir params
+      "outdir" -> uiOutdir params
       _        -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
 
@@ -101,14 +103,23 @@ uiCommands cmd params = do
 handler :: SomeException -> Text
 handler e = T.pack $ show e
 
--- Change directory for reading files
-uiCd :: [Text] -> UiMonad ()
-uiCd parms = runExceptT (
-    verifyLength1 "cd" (T.unpack <$> parms) >>= doCD)
+-- Change the input directory for reading files
+uiIndir :: [Text] -> UiMonad ()
+uiIndir parms = runExceptT (
+    (verifyLength1 "indir" (T.unpack <$> parms)) >>= verifyDirExists >>= doIndir)
       >>= report
   where
-    doCD :: (MonadIO m, MonadCatch m) => FilePath -> ExceptT Text m ()
-    doCD fp = handleExceptT handler $ liftIO $ setCurrentDirectory fp
+    doIndir :: (MonadIO m, MonadState UiState m ) => FilePath -> ExceptT Text m ()
+    doIndir dir = gets uiDparms >>= putDparm . dpSetIndir dir
+
+-- Change the output directory for reading files
+uiOutdir :: [Text] -> UiMonad ()
+uiOutdir parms = runExceptT (
+    (verifyLength1 "outir" (T.unpack <$> parms)) >>= verifyDirExists >>= doOutdir)
+      >>= report
+  where
+    doOutdir :: (MonadIO m, MonadState UiState m ) => FilePath -> ExceptT Text m ()
+    doOutdir dir = gets uiDparms >>= putDparm . dpSetIndir dir
 
 -- TODO Same dimension for all hss entries etc etc
 
@@ -130,11 +141,17 @@ uiLoadHss parms = runExceptT
       liftIO $ putStrLn $ show (length phs) <>  (" halfspaces: ")
       putHss hss
       return initialCube
-    verifyLoad :: (MonadIO m, MonadCatch m) => Text -> ExceptT Text m [VU.Vector Double]
+    verifyLoad :: (MonadIO m, MonadState UiState m, MonadCatch m) =>
+                  Text -> ExceptT Text m [VU.Vector Double]
     verifyLoad textpath = do
-      let path = T.unpack textpath
+      dparms <- gets uiDparms
+      let path = (dpIndir dparms) </> T.unpack textpath
+      -- Read the data
       liftIO $ putStrLn ("Reading file " <> path)
       contents <- handleExceptT handler $ liftIO $ T.readFile path
+      -- Write the filename into the UIState
+      putDparm $ dpSetFilename (takeBaseName path) dparms
+      -- Verify the data
       verifyVectors $ parseLine <$> T.lines contents
     parseLine :: Text -> V.Vector (Maybe Double)     -- The outer Maybe is for unfoldr
     parseLine l = V.unfoldr step (skipBlanks l)      -- The inner for error handling!
@@ -283,3 +300,12 @@ verifyBoolean :: (MonadState UiState m, MonadIO m) => Text -> Text -> ExceptT Te
 verifyBoolean _  "0" = return False
 verifyBoolean _  "1" = return True
 verifyBoolean msg _   = throwError $ msg <> " expects '0' or '1'"
+
+-- Verify whether a directory exists
+verifyDirExists :: (MonadIO m) => FilePath -> ExceptT T.Text m FilePath
+verifyDirExists dir = do
+    bExits <- liftIO $ doesDirectoryExist dir
+    if bExits
+       then return dir
+       else throwError $ "Directory `" <> T.pack  dir <> "` doesn't exist"
+
