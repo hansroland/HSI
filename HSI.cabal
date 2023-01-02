@@ -60,7 +60,7 @@ library libhsi
         Data.Graph.HSI.Face,
         Data.Graph.HSI.RelPos,
         Data.Graph.HSI.Utils,
-        Data.Graph.HSI.Visibility,
+        Data.Graph.Display.Visibility,
         Data.Graph.Dag,
         Data.Graph.Dag.Dag,
         Data.Graph.Dag.Node

@@ -21,7 +21,6 @@ import Data.List ( sortBy )
 
 -- Type Synonyms
 type HsiPolytope = Polytope RelPos              -- A Polytope used during HSI Algorithm
-type VisPolytope = Polytope Visibility          -- A Polytope used during drawing
 
 -- See: https://ti.inf.ethz.ch/ew/courses/Geo20/lecture/gca20-9.pdf
 data Polytope a = Polytope { polyHs :: !HsMap, polyDag :: !(Dag Face a)}
@@ -97,16 +96,6 @@ checkFormulaEuler poly  =
     in  case euler of
            0 -> "Euler Ok"
            _ -> "EULER VIOLATED"
-
--- Convert HsiPolytope to VisPol<tope
-polyHsi2Vis :: HsiPolytope -> VisPolytope
-polyHsi2Vis poly = poly{ polyDag = newDag}
- where
-    dag = polyDag poly
-    newNds = Map.map hsi2vis . dagNodes . polyDag
-    newDag = dag {dagNodes = newNds poly}
-    hsi2vis :: HsiNode -> VisNode
-    hsi2vis node = node {nodeAttr = Hidden}
 
 -- Get the dimension of a polytope
 polyDim :: HsiPolytope -> Dim

@@ -19,13 +19,6 @@ data Face = Nonvert !Dim ![HsKey]                   -- A Non-Vertex stores its d
 type HsiNode = Node Face RelPos
 type HsiDag = Dag Face RelPos
 
-type VisNode = Node Face Visibility
-type VisDag = Dag Face Visibility
-
--- Datatype for visibility of faces   --TODO Move to the visible module !!!!
-data Visibility = Visible | Hidden
-    deriving (Show, Eq)
-
 -- Check, whether a this face is a vertex or not
 isVertex :: Face -> Bool
 isVertex (Vertex _ _ ) = True

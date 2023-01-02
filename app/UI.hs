@@ -11,7 +11,7 @@ import Data.Graph.HSI
 import Data.Graph.Display.DispParams
 import Data.Graph.Display.Vect2
 import Data.Graph.HSI.InitCube
-import Data.Graph.Display.Display (display)
+import Data.Graph.Display.Display (display, polyHsi2Vis)
 
 import           Data.Text(Text)
 import qualified Data.Text              as T

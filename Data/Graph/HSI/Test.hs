@@ -54,4 +54,4 @@ import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Algorithm
-import Data.Graph.HSI.Visibility
+import Data.Graph.Display.Visibility

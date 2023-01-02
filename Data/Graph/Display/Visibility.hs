@@ -1,12 +1,11 @@
 {-# Language NamedFieldPuns #-}
 
-module Data.Graph.HSI.Visibility where
+module Data.Graph.Display.Visibility where
+
+import Data.Graph.Display.Data
 
 import Data.Graph.Dag
-import Data.Graph.HSI.Polytope
-import Data.Graph.HSI.Face
-import Data.Graph.HSI.Halfspace
-import Data.Graph.HSI.Utils    -- TODO export needed stuff from Utils in Dag.Graph.HSI
+import Data.Graph.HSI
 
 import Control.Monad.State.Strict (when )
 import qualified Data.Vector.Unboxed as VU

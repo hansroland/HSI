@@ -9,6 +9,7 @@ import Data.Graph.Display.DispParams
 import Data.Graph.Display.Vect2
 import Data.Graph.Display.Data
 import Data.Graph.Display.Svg
+import Data.Graph.Display.Visibility
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
@@ -37,6 +38,17 @@ data DrawObj = DrawObj {drEdges :: ![IndexedEdge], drVerts :: !PointMap}
 type Matrix = V.Vector (VU.Vector Double)
 type VertMap = EnumMap NodeKey (Vector Double)
 type PointMap = EnumMap NodeKey P2
+
+-- Convert HsiPolytope to VisPol<tope
+polyHsi2Vis :: HsiPolytope -> VisPolytope
+polyHsi2Vis poly = poly{ polyDag = newDag}
+ where
+    dag = polyDag poly
+    newNds = Map.map hsi2vis . dagNodes . polyDag
+    newDag = dag {dagNodes = newNds poly}
+    hsi2vis :: HsiNode -> VisNode
+    hsi2vis node = node {nodeAttr = Hidden}
+
 
 -- Display a polytope
 display :: DispParams -> VisPolytope -> IO ()
