@@ -8,7 +8,7 @@ import Data.Graph.HSI
 import Data.Graph.Display.DispParams
 import Data.Graph.Display.Vect2
 import Data.Graph.Display.Data
-import Data.Graph.Display.Html
+import Data.Graph.Display.Svg
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
