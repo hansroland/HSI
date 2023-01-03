@@ -54,9 +54,7 @@ hsNormalize hs@Halfspace{ hsV } = hs {hsV = normalize hsV}
 
 -- Distance of a Point from a halfspace
 distance :: Halfspace -> Vector Double -> Double
-distance hs point =
-    let nv = normalize $ hsV hs
-    in  sp nv point - hsD hs
+distance hs point = sp (hsV hs) point - hsD hs
 
 -- Dimension of a halfspace
 hsDim :: Halfspace -> Dim
