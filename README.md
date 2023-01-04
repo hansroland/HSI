@@ -1,8 +1,8 @@
 # HSI Halfspace Intersection
 
-# Calculate and draw convex polytopes from half-space equations
+Calculate and draw convex polytopes from half-space equations
 
-<img src="./images/hsiexamples.svg"/>
+<img src="./images/diamond1.svg"/>
 
 # Basics
 
@@ -52,7 +52,7 @@ in postorder method. Different to trees, the traversal method can visit a node o
 
 To specify an algorithm on a Hasse diagram we have to specify to following:
 
-* Traversal method (preorder 0r postorder)
+* Traversal method (preorder or postorder)
 * Visting frequency (Single or Multiple)
 * The processing done on each node / face.
 

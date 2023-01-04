@@ -54,7 +54,7 @@ lineToSvg maxy (Line {lix1, lix2, liy1, liy2, liStyle }) =
         vy2 = toV $ maxy - liy2
         attrs = [X1_ <<- toV lix1, Y1_ <<- vy1,
                  X2_ <<- toV lix2, Y2_ <<- vy2,
-                 Stroke_ <<- "black", Stroke_width_ <<- "1"]
+                 Stroke_ <<- "currentColor", Stroke_width_ <<- "1"]
     in  case liStyle of
           Normal -> line_ attrs
           Dotted -> line_ ([Stroke_dasharray_ <<- "3, 3"] <>  attrs)
