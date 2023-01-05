@@ -1,6 +1,4 @@
-# HSI Halfspace Intersection
-
-Calculate and draw convex polytopes from half-space equations
+# HSI Halfspace Intersection - Calculate and draw convex polytopes from half-space equations
 
 <img src="./images/hsiexamples.svg"/>
 
