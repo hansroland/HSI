@@ -2,7 +2,7 @@
 
 Calculate and draw convex polytopes from half-space equations
 
-<img src="./images/diamond1.svg"/>
+<img src="./images/hsiexamples.svg"/>
 
 # Basics
 
