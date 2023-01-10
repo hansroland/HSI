@@ -36,10 +36,10 @@ For the 3-dimensional space this software creates simple drawings.
 ## Data Structure
 
 All vertices, edges, sides and  hyperplanes are called *face*s. Set inclusion of the point sets of the faces defines a
-half-order relation on the faces. Half-orders can be represented with *Hasse diagrams* which are
-a special from of *directed acyclic graphs*. In Haskell we use *Map*s to implement directed acyclic graphs.
+half-order relation on the faces. A half-orders can be represented with a *Hasse diagram* or a *face lattice*. This is
+a special form of a *directed acyclic graph*. In Haskell we can use *Map*s to implement directed acyclic graphs.
 
-The next 2 images show all faces of a normal triangle as a geometric object and as a Hasse diagram:
+The next 2 images show all faces of a normal triangle as a geometric object and as a face diagram:
 
 <center><img src="./images/Hasse.svg"/></center>
 
@@ -66,11 +66,35 @@ The numbers in the nodes in the following images, represent the visiting sequenc
 
 # HSI Algorithm
 
-## Calculate Relative Position for each Face
+The algorithm to calculate a polytope from a set of halfspaces starts with a
+huge cube and applies the HSI algorithm for each halfspace in the set.
 
-## Intersect with H<sup>-</sup>
+To visualize the algorihm, we use a simple triangle. The red line is the half-space, the little
+arrow points towards H<sup>+</sup>.
 
-## Intersect with H<sup>0</sup>
+<img src="./images/Algo01.svg"/>
+
+The following sctions contain a short description of the algorithm.
+
+## 1. Calculate the Relative Position for each Face
+
+The relative position to a halfspace for a vertex is either:
+
+* **"0"** : if the vertex is part of H<sup>0</sup>
+* **"+"** : if the vertex is part of H<sup>+</sup>
+* **"-"** : if the vertex is part of H<sup>-</sup>
+
+The relative position of a non-vertex face is the *OR*-combination of all vertices of this face.
+eg For an edge with vertices on both sides of H<sup>0</sup> the relative position is **"-+"**.
+
+This is implemented by a postorder walk with single visits to the faces/nodes. For each face, the
+following diagram shows the calculated relative position:
+
+<img src="./images/Algo02.svg"/>
+
+## 2. Intersect with H<sup>-</sup>
+
+## 3. Intersect with H<sup>0</sup>
 
 # Higher Dimensions
 
@@ -91,3 +115,5 @@ Terminology is from [2]. We mainly use:
 [1] [Nef-W. (1978). Beiträge zur Theorie der Polyeder. Bern: Herbert Lang](https://books.google.ch/books/about/Beitr%C3%A4ge_zur_Theorie_der_Polyeder.html?id=3Lm0AAAAIAAJ&redir_esc=y)
 
 [2] [Welz-E, Gärtner-B. (2020). Theory of Combinatorial Algorithms, Chapter 9 ](https://ti.inf.ethz.ch/ew/courses/Geo20/lecture/gca20-9.pdf)
+
+[3] [Article on Convex Polytopes on Wikipedia](https://en.wikipedia.org/wiki/Convex_polytope)

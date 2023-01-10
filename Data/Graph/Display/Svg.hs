@@ -33,7 +33,7 @@ plot dparms lns = do
         outdir = dpOutdir dparms
         filename = dpFilename dparms
         svgFile = outdir </> filename <.> "svg"
-        svgdata = svgDoc dparms $ mconcat svgLines
+        svgdata = svgDoc dparms $ svgHdr <> mconcat svgLines
     handleExceptT handler $ liftIO $ do
         TLIO.writeFile svgFile $ renderText svgdata
         openBrowser svgFile >>= print
@@ -46,6 +46,10 @@ svgDoc dparms content =
         h = toV $ round $ y size
     in  doctype
         <> with (svg11_ content) [Version_ <<- "1.1", Width_ <<- w, Height_ <<- h]
+
+-- The SVG header consists of a base rectangle with a white background
+svgHdr :: Element
+svgHdr = rect_ [Width_ <<- "100%", Height_ <<- "100%", Fill_ <<- "white"]
 
 -- Convert a Line to a Svg Element
 lineToSvg :: Int -> Line -> Element
