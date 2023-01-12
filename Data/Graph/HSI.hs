@@ -10,6 +10,7 @@ module Data.Graph.HSI (
     polyStats,
     isVertex,
     polyNodeAssocs,
+    polyDim,
     nodeDim,
     nodeAttr,
     nodeHsKeys,

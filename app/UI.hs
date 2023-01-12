@@ -20,7 +20,7 @@ import qualified Data.Text.Read         as T
 import qualified Data.Vector            as V
 import qualified Data.Vector.Unboxed    as VU
 import qualified Data.Vector.Generic    as VG
-import Data.List(partition)
+import Data.List(partition, nub)
 import Data.Char (isSpace)
 import Data.Maybe (fromJust, isNothing)
 import System.FilePath
@@ -152,7 +152,7 @@ uiLoadHss parms = runExceptT
       -- Write the filename into the UIState
       putDparm $ dpSetFilename (takeBaseName path) dparms
       -- Verify the data
-      verifyVectors $ parseLine <$> T.lines contents
+      (verifyVectors $ parseLine <$> T.lines contents) >>= verifyNonZeroVecs >>= verifyDims
     parseLine :: Text -> V.Vector (Maybe Double)     -- The outer Maybe is for unfoldr
     parseLine l = V.unfoldr step (skipBlanks l)      -- The inner for error handling!
       where
@@ -173,6 +173,24 @@ uiLoadHss parms = runExceptT
         if null errs
               then return $ toUnboxed <$> vecs
               else throwError $ T.pack ("Input errors in lines " ++ show (map fst errs))
+    verifyDims :: (MonadIO m) => [VU.Vector Double] -> ExceptT Text m [VU.Vector Double]
+    verifyDims vecs = do
+        -- All input equations must have the same dimension
+        let dims = nub $ VU.length <$> vecs
+        if length dims == 1
+            then return vecs
+            else throwError $ T.pack ("Not all input equations have the same dimension " ++ show dims)
+    verifyNonZeroVecs :: (MonadIO m) => [VU.Vector Double] -> ExceptT Text m [VU.Vector Double]
+    verifyNonZeroVecs vecs = do
+        let vs = (VU.init <$> vecs)              -- only coeffs
+            vsa = fmap (VU.map abs) vs           -- take them positive
+            vss = VU.sum <$> vsa                 --  sum
+            ps = zip ([1..]::[Int]) vss            -- pair them with line numbers
+            zeros = filter ((< 0.001) . snd) ps
+        if null zeros
+          then return vecs
+          else throwError $ T.pack ("Input lines with invalid halfspace equations " ++ show (fst <$> zeros))
+
     -- Run the HSI algorithm on the halfspaces into the halfspace store
     doHsi :: (MonadIO m, MonadState UiState m ) => HsiPolytope -> ExceptT Text m ()
     doHsi poly0 = do
@@ -213,9 +231,14 @@ uiList = do
 uiDisplay :: (MonadState UiState m, MonadIO m) => [Text] -> m()
 uiDisplay params = do
     runExceptT
-      (verifyLength "draw" 0 params >> verifyPoly >>= doDisplay)
+      (verifyLength "draw" 0 params >> verifyPoly >>= verify3DimPoly >>= doDisplay)
       >>= report
   where
+    -- Verify that there exists a polytope in the UIState
+    verify3DimPoly :: (MonadState UiState m, MonadIO m) => HsiPolytope -> ExceptT Text m HsiPolytope
+    verify3DimPoly poly
+      | polyDim poly == 3 = return poly
+      | otherwise         = throwError "For drawing, the dimension must be 3"
     doDisplay :: (MonadState UiState m, MonadIO m) => HsiPolytope -> ExceptT Text m ()
     doDisplay poly = do
       dparms <- gets uiDparms
