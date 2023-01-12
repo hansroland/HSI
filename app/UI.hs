@@ -138,7 +138,7 @@ uiLoadHss parms = runExceptT
           initialCube = mkCube dim
           hss = hsFromVector <$> vecs
           phs = zip ([1..]::[Int]) vecs
-      liftIO $ putStrLn $ show (length phs) <>  (" halfspaces: ")
+      liftIO $ putStrLn $ show (length phs) <>  " halfspaces: "
       putHss hss
       return initialCube
     verifyLoad :: (MonadIO m, MonadState UiState m, MonadCatch m) =>
@@ -177,9 +177,10 @@ uiLoadHss parms = runExceptT
     verifyDims vecs = do
         -- All input equations must have the same dimension
         let dims = nub $ VU.length <$> vecs
-        if length dims == 1
-            then return vecs
-            else throwError $ T.pack ("Not all input equations have the same dimension " ++ show dims)
+        case length dims of
+          0 -> throwError "No half-space definitions found"
+          1 -> return vecs
+          _ -> throwError $ T.pack ("Not all input equations have the same dimension " ++ show dims)
     verifyNonZeroVecs :: (MonadIO m) => [VU.Vector Double] -> ExceptT Text m [VU.Vector Double]
     verifyNonZeroVecs vecs = do
         let vs = (VU.init <$> vecs)              -- only coeffs
@@ -281,7 +282,7 @@ uiHidden params = runExceptT
 
 -- report the verification errors
 report :: (MonadIO m) => Either Text () -> m ()
-report (Left e) = liftIO $ T.putStrLn e
+report (Left e) = liftIO $ T.putStrLn $ "*** " <> e
 report (Right _) = return ()
 
 -- Verify that the tookens are numeric, and collect them in a Double vector
