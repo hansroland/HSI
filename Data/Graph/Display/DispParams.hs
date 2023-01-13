@@ -15,7 +15,8 @@ data DispParams = DispParams {
     dpIndir     :: FilePath,               -- Filepath to the input directory
     dpOutdir    :: FilePath,               -- Filepath to the outpur directory
     dpFilename  :: FilePath,               -- The FilePath to write the HTML file
-    dpHidden    :: Bool                    -- True = Show hidden lines
+    dpHidden    :: Bool,                   -- True = Show hidden lines
+    dpAuto      :: Bool                    -- True = calculate automatically
     -- dpJproj :: Int,
     -- dpAuge  :: Vector Double
     } deriving (Show)
@@ -28,7 +29,8 @@ dpInit = DispParams
       dpOutdir = "./",
       dpFilename = "poly",
       dpZaxis = VU.fromList [0,0,1],
-      dpHidden = True
+      dpHidden = True,
+      dpAuto = True
     }
 
 -- Set a new value to the dpSize field
@@ -49,3 +51,6 @@ dpSetOutdir dir dparms = dparms { dpOutdir = dir}
 
 dpSetFilename :: FilePath -> DispParams -> DispParams
 dpSetFilename name dparms = dparms {dpFilename = name}
+
+dpSetAuto :: Bool ->  DispParams -> DispParams
+dpSetAuto b dparms = dparms { dpAuto = b}

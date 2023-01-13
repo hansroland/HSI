@@ -88,20 +88,31 @@ uiLoop = do
 uiCommands :: Text -> [Text] -> UiMonad ()
 uiCommands cmd params = do
     case cmd of
-      "load"   -> uiLoadHss params
+      "auto"   -> uiAuto params
       "draw"   -> uiDisplay params
-      "size"   -> uiSize params
-      "pdir"   -> uiPdir params
       "hidden" -> uiHidden params
-      "list"   -> uiList
+      "hsi"    -> uiHsi params
       "indir"  -> uiIndir params
+      "list"   -> uiList
+      "load"   -> uiLoadHss params
       "outdir" -> uiOutdir params
+      "pdir"   -> uiPdir params
+      "size"   -> uiSize params
       _        -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
 
 -- General cheap error handler
 handler :: SomeException -> Text
 handler e = T.pack $ show e
+
+-- Change the automatic hi calculation mode
+uiAuto :: [Text] -> UiMonad ()
+uiAuto params = runExceptT
+    (verifyLength1 "auto" params >>= verifyBoolean "auto" >>= doAuto)
+     >>= report
+  where
+    doAuto :: (MonadIO m, MonadState UiState m) => Bool -> ExceptT Text m ()
+    doAuto auto = gets uiDparms >>= putDparm . dpSetAuto auto
 
 -- Change the input directory for reading files
 uiIndir :: [Text] -> UiMonad ()
@@ -121,16 +132,16 @@ uiOutdir parms = runExceptT (
     doOutdir :: (MonadIO m, MonadState UiState m ) => FilePath -> ExceptT Text m ()
     doOutdir dir = gets uiDparms >>= putDparm . dpSetIndir dir
 
--- TODO Same dimension for all hss entries etc etc
-
 -- Read the halfspaces from a file and calculate the polytope
 uiLoadHss :: [Text] -> UiMonad ()
-uiLoadHss parms = runExceptT
-             -- TODO check availability of hss before going to hsi
-             -- TODO check dimension of halfspace
-             -- TODO initialize initial cube !!
-    (verifyLength1 "load" parms >>= verifyLoad >>= doLoad >>= doHsi)
-     >>= report
+uiLoadHss parms =
+  (runExceptT $ do
+    poly <- verifyLength1 "load" parms >>= verifyLoad >>= verifyDims >>= doLoad
+    dparms <- gets uiDparms
+    case dpAuto dparms of
+      True  -> doHsi poly
+      False -> pure ()
+  ) >>= report
   where
     doLoad  :: (MonadIO m, MonadState UiState m ) => [VU.Vector Double] -> ExceptT Text m HsiPolytope
     doLoad vecs = do
@@ -140,7 +151,8 @@ uiLoadHss parms = runExceptT
           phs = zip ([1..]::[Int]) vecs
       liftIO $ putStrLn $ show (length phs) <>  " halfspaces: "
       putHss hss
-      return initialCube
+      putPoly $ Just initialCube
+      pure initialCube
     verifyLoad :: (MonadIO m, MonadState UiState m, MonadCatch m) =>
                   Text -> ExceptT Text m [VU.Vector Double]
     verifyLoad textpath = do
@@ -192,21 +204,27 @@ uiLoadHss parms = runExceptT
           then return vecs
           else throwError $ T.pack ("Input lines with invalid halfspace equations " ++ show (fst <$> zeros))
 
-    -- Run the HSI algorithm on the halfspaces into the halfspace store
-    doHsi :: (MonadIO m, MonadState UiState m ) => HsiPolytope -> ExceptT Text m ()
-    doHsi poly0 = do
-      hss <- gets uiHss
-      case hsiPoly poly0 hss of
-        (Left msg)   -> do
-          liftIO $ putStrLn msg
-          putPoly Nothing
-        (Right poly) -> do
-          liftIO $ do
-            putStrLn $ show $ polyStats poly
-            putStrLn $ show $ checkFormulaEuler poly
-          -- update state: remove halfspaces, add polytope
-          putPoly $ Just poly
-      putHss []
+uiHsi :: [Text] -> UiMonad ()
+uiHsi params = do
+  runExceptT
+      (verifyLength "hsi" 0 params >> verifyPoly >>= doHsi)
+      >>= report
+
+-- Run the HSI algorithm on the halfspaces into the halfspace store
+doHsi :: (MonadIO m, MonadState UiState m ) => HsiPolytope -> ExceptT Text m ()
+doHsi poly = do
+    hss <- gets uiHss
+    case hsiPoly poly hss of
+      (Left msg)   -> do
+        liftIO $ putStrLn msg
+        putPoly Nothing
+      (Right newPoly) -> do
+        liftIO $ do
+          putStrLn $ show $ polyStats newPoly
+          putStrLn $ show $ checkFormulaEuler newPoly
+        -- update state: remove halfspaces, add polytope
+        putPoly $ Just newPoly
+    putHss []
 
 -- List the current polytope in the UI State
 uiList :: (MonadState UiState m, MonadIO m) => m()
@@ -318,7 +336,7 @@ verifyPoly = do
   where
     go :: (MonadIO m) => Maybe HsiPolytope -> ExceptT Text m HsiPolytope
     go (Just poly) = return poly
-    go  Nothing     = throwError ("No polytope has been calculated")
+    go  Nothing     = throwError ("No polytope found")
 
 verifyBoolean :: (MonadState UiState m, MonadIO m) => Text -> Text -> ExceptT Text m Bool
 verifyBoolean _  "0" = return False
@@ -332,4 +350,3 @@ verifyDirExists dir = do
     if bExits
        then return dir
        else throwError $ "Directory `" <> T.pack  dir <> "` doesn't exist"
-

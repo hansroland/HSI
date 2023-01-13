@@ -15,6 +15,7 @@ module Data.Graph.HSI (
     nodeAttr,
     nodeHsKeys,
     nodeSetAttr,
+    hsDim,
     hsFromList,
     hsFromVector,
     hsEquation,
