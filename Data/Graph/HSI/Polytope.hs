@@ -91,7 +91,7 @@ checkFormulaEuler poly  =
     let dims = Map.elems $ polyStats poly
         alternateSeq = zipWith (*) dims $ cycle [1, -1]
         evenfact | odd $ length dims = 0      -- We have 0 as element too
-                 | otherwise          = -1
+                 | otherwise         = -1
         euler =  sum alternateSeq + evenfact
     in  case euler of
            0 -> "Euler Ok"

@@ -1,4 +1,5 @@
 {-# Language NamedFieldPuns #-}
+{-# Language OverloadedStrings #-}
 
 module Data.Graph.HSI.Algorithm where
 
@@ -15,17 +16,20 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.EnumMap as Map
 import qualified Data.Set as Set
 
+import           Data.Text(Text)
+import qualified Data.Text              as T
+
 import Data.Set (Set)
 import Data.List ( (\\) )
 import Data.Maybe (fromJust)
 import Control.Monad.State.Strict ( State, unless, when )
 
 -- Calculate polytope from halfspaces
-hsiPoly :: HsiPolytope -> [Halfspace] -> Either String HsiPolytope
+hsiPoly :: HsiPolytope -> [Halfspace] -> Either Text HsiPolytope
 hsiPoly poly hss = foldlM hsiStep poly hss
 
 -- Apply one single halfspace to the polytope
-hsiStep :: HsiPolytope -> Halfspace -> Either String HsiPolytope
+hsiStep :: HsiPolytope -> Halfspace -> Either Text HsiPolytope
 hsiStep poly hs = do
     let poly1 = hsiRelPosPoly hs poly
         relPosPoly = nodeAttr $ dagStartNode $ polyDag poly1
@@ -33,13 +37,13 @@ hsiStep poly hs = do
     pure $ hsiRed . hsiIntersectH0 . polyInsertHalfspace hs . hsiIntersectHMin $ poly2
   where
     -- Check the realtive position of a polytope
-    checkRelPosPoly :: RelPos -> HsiPolytope -> Either String HsiPolytope
+    checkRelPosPoly :: RelPos -> HsiPolytope -> Either Text HsiPolytope
     checkRelPosPoly relPos poly1
       | relPos == relPos0  || relPos == relPosM0  = Left "Polytope is degraded"
       | relPos == relPosM                         = Left "Polytope is empty"
       | relPos == relPosP  || relPos == relPosP0  = pure poly1   -- Halfspace is redundant
       | relPos == relPosMP || relPos == relPosM0P = pure poly1
-      | otherwise = Left ("checkRelHs got strange relPos:" ++ show relPos)
+      | otherwise = Left $ T.pack ("checkRelHs got strange relPos:" <> show relPos)
 
 -- Calculate the RelPos for a polytope
 hsiRelPosPoly :: Halfspace -> HsiPolytope -> HsiPolytope

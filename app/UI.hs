@@ -216,8 +216,8 @@ doHsi poly = do
     hss <- gets uiHss
     case hsiPoly poly hss of
       (Left msg)   -> do
-        liftIO $ putStrLn msg
         putPoly Nothing
+        throwError msg
       (Right newPoly) -> do
         liftIO $ do
           putStrLn $ show $ polyStats newPoly
@@ -290,9 +290,6 @@ uiHidden params = runExceptT
   where
     doHidden :: (MonadIO m, MonadState UiState m) => Bool -> ExceptT Text m ()
     doHidden showHidden = gets uiDparms >>= putDparm . dpSetHidden showHidden
-
--- TODO: Validate halfspaces: Are there any halfspaces and have all the same dimension
--- validateHss
 
 -- ---------------------------------------------------------------------------------
 -- General validation functions
