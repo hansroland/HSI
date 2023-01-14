@@ -21,12 +21,12 @@ import qualified Data.Text              as T
 
 import Data.Set (Set)
 import Data.List ( (\\) )
-import Data.Maybe (fromJust)
-import Control.Monad.State.Strict ( State, unless, when )
+-- import Data.Maybe (fromJust)
+import Control.Monad.State.Strict ( State, unless, {- when-} )
 
 -- Calculate polytope from halfspaces
 hsiPoly :: HsiPolytope -> [Halfspace] -> Either Text HsiPolytope
-hsiPoly poly hss = foldlM hsiStep poly hss
+hsiPoly poly hss = foldlM hsiStep poly hss        --  >>= hsiRed
 
 -- Apply one single halfspace to the polytope
 hsiStep :: HsiPolytope -> Halfspace -> Either Text HsiPolytope
@@ -34,7 +34,7 @@ hsiStep poly hs = do
     let poly1 = hsiRelPosPoly hs poly
         relPosPoly = nodeAttr $ dagStartNode $ polyDag poly1
     poly2 <- checkRelPosPoly relPosPoly poly1
-    pure $ hsiRed . hsiIntersectH0 . polyInsertHalfspace hs . hsiIntersectHMin $ poly2
+    pure $ hsiIntersectH0 . polyInsertHalfspace hs . hsiIntersectHMin $ poly2
   where
     -- Check the realtive position of a polytope
     checkRelPosPoly :: RelPos -> HsiPolytope -> Either Text HsiPolytope
@@ -102,7 +102,7 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
     processNode hsmap (key,node) = do
       dag <- getDag
       unless (hasH0Kids dag node) $ do
-          -- The grandchildren in H0 of the current face become the children
+          -- The grandchildren in H0 of the current halfspace become the children
           -- of the new face.
           let grandKids = dagGrandNodes dag node
               grandKidsKeys = fst <$>
@@ -113,7 +113,6 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
 
     -- Make a new Node with a face: insert it into the dag
     -- and return both, key and node.
-    -- TODO Make a HsiDagAlgo type synonym
     mkNewNode :: HsMap -> [NodeKey] -> HsiNode -> State (DagAlgoData Face RelPos c) NodeKey
     mkNewNode hsmap kids node = do
       dag <- getDag
@@ -121,9 +120,13 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
           (newSubs, newFace) =
             if dim == 1
                 then let hsKeys = nodeHsKeys node ++ [hskey]
-                         vec = mkVert hsKeys hsmap
+                         vec = calculateVertex hsmap hsKeys
                      in  ([], Vertex vec hsKeys )
-                else let hsKeys = hskey : nodeHsKeys node
+                -- Note: `calculateVertex` may throw an error, when the linear
+                --       equation system has no solution. This should not occur,
+                --       because we calculate only if we have a point on each
+                 --       side of the halfspace!
+              else let hsKeys = hskey : nodeHsKeys node
                      in  (kids, Nonvert (dim -1) hsKeys)
           newnode = node{ nodeKids = newSubs, nodeData = newFace, nodeAttr = relPos0 }
           (newKey, dag1) = dagInsertNode newnode dag
@@ -135,14 +138,6 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
     onBothSides node =
       let relPos = nodeAttr node
       in  relPos == relPosMP || relPos == relPosM0P
-
-    -- Calculate a new vertex
-    mkVert :: [HsKey] -> HsMap -> VU.Vector Double
-    mkVert hsKeys hsmap = calculateVertex hsmap hsKeys
-    -- Note: `calculateVertex` may throw an error, when the linear
-    --       equation system has no solution. This should not occur,
-    --       because we calculate only if we have a point on each
-    --       side of the halfspace!
 
     -- Connect a node to a parent node
     linkToParent :: NodeKey -> NodeKey -> State (DagAlgoData Face RelPos u) ()
@@ -159,11 +154,13 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
           isH0Key = (== relPos0) . nodeAttr . dagNode dag
       in any isH0Key $ nodeKids node
 
+{-
 -- Redundancy processing:
-hsiRed :: HsiPolytope -> HsiPolytope
-hsiRed poly@Polytope {polyDag, polyHs} = poly {polyDag = newDag, polyHs = newHs}
+hsiRed :: HsiPolytope -> Either Text HsiPolytope
+hsiRed poly@Polytope {polyDag, polyHs} = pure $ poly {polyDag = newDag, polyHs = newHs}
   where
-    facetDim = polyDim poly - 1
+    polydim = polyDim poly
+    facetDim = polydim - 1
     newDag = preOrder Multiple addHs  Nothing $
                preOrder Single clearHss () polyDag
     newHs = consHss newDag polyHs
@@ -178,12 +175,15 @@ hsiRed poly@Polytope {polyDag, polyHs} = poly {polyDag = newDag, polyHs = newHs}
     addHs :: NodeFunction Face RelPos (Maybe HsKey)
     addHs (key,node@Node{nodeData})
         -- All faces other than polytope and facets. (In 3D: vertices and edges)
-        -- Add the HsKey from the supporting facet to all decendants.
+        -- When we haven't yet enough supporting halfspace for the dimension of
+        --   this node, we add the HsKey from the supporting facet to all decendants.
       | (faceDim nodeData) < facetDim = do
-         dag <- getDag
-         ustate <- getClState
-         let newNode = node{ nodeData = addHsKey nodeData $ fromJust ustate }
-         putDag $ dagUpdateNode dag key newNode
+          when (Dim (length (faceHsKeys nodeData)) < (polydim - faceDim nodeData)) $ do
+            dag <- getDag
+            ustate <- getClState
+            let newNode = node{ nodeData = addHsKey nodeData $ fromJust ustate }
+            putDag $ dagUpdateNode dag key newNode
+          pure ()
          -- The facet: Store the HsKey of the facet in the user-state
       | (nodeDim node) == facetDim = do
          putClState $ Just $ head $ nodeHsKeys node
@@ -197,3 +197,4 @@ hsiRed poly@Polytope {polyDag, polyHs} = poly {polyDag = newDag, polyHs = newHs}
           usedKeys = concat $ faceHsKeys <$> faces
           nonused = Map.keys hsmap \\ usedKeys
       in  foldr (Map.delete) hsmap nonused
+-}
