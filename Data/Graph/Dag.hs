@@ -9,6 +9,8 @@ module Data.Graph.Dag ( Dag(..), NodeKey,
         putClState,
         getDag,
         putDag,
+        dsDag,
+        dsClState,
         -- Dag construction
         dagInit,
         dagNode,

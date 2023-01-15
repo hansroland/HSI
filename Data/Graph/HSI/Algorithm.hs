@@ -21,12 +21,11 @@ import qualified Data.Text              as T
 
 import Data.Set (Set)
 import Data.List ( (\\) )
--- import Data.Maybe (fromJust)
-import Control.Monad.State.Strict ( State, unless, {- when-} )
+import Control.Monad.State.Strict ( State, unless )
 
 -- Calculate polytope from halfspaces
 hsiPoly :: HsiPolytope -> [Halfspace] -> Either Text HsiPolytope
-hsiPoly poly hss = foldlM hsiStep poly hss        --  >>= hsiRed
+hsiPoly poly hss = foldlM hsiStep poly hss >>= hsiCleanHs
 
 -- Apply one single halfspace to the polytope
 hsiStep :: HsiPolytope -> Halfspace -> Either Text HsiPolytope
@@ -50,7 +49,7 @@ hsiRelPosPoly :: Halfspace -> HsiPolytope -> HsiPolytope
 hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     poly {polyDag = newDag }
   where
-    newDag = postOrder Single relPosNode () dag0
+    newDag = dsDag $ postOrder Single relPosNode () dag0
     -- Calculate the relPos for a single node
     relPosNode :: NodeFunction Face RelPos ()
     relPosNode (key, node) = do
@@ -77,7 +76,7 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
 -- Remove Nodes, that are now outside the new halfspace
 hsiIntersectHMin :: HsiPolytope -> HsiPolytope
 hsiIntersectHMin poly@Polytope {polyDag} =
-    poly {polyDag = postOrder Single nodeRemove Set.empty polyDag}
+    poly {polyDag = dsDag $ postOrder Single nodeRemove Set.empty polyDag}
   where
     nodeRemove :: NodeFunction  Face RelPos (Set NodeKey)
     nodeRemove (key, node@Node{nodeKids, nodeAttr}) = do
@@ -97,7 +96,7 @@ hsiIntersectHMin poly@Polytope {polyDag} =
 hsiIntersectH0 :: (HsKey, HsiPolytope) -> HsiPolytope
 hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
   where
-    newDag = postOrderFilter Multiple (processNode  polyHs) onBothSides () polyDag
+    newDag = dsDag $ postOrderFilter Multiple (processNode  polyHs) onBothSides () polyDag
     processNode :: HsMap -> NodeFunction Face RelPos ()
     processNode hsmap (key,node) = do
       dag <- getDag
@@ -153,6 +152,20 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
       let isH0Key :: NodeKey -> Bool
           isH0Key = (== relPos0) . nodeAttr . dagNode dag
       in any isH0Key $ nodeKids node
+
+-- Remove all unused half-spaces from the HsList
+-- Note: This is not a full redundandency processing
+hsiCleanHs :: HsiPolytope -> Either Text HsiPolytope
+hsiCleanHs poly@Polytope{polyHs, polyDag} = Right $ poly{ polyHs = newHs}
+  where
+    rsltDagAlgo = postOrder Single hsCollect Set.empty polyDag
+    usedHs = dsClState rsltDagAlgo
+    unusedHs = Set.difference (Set.fromList (Map.keys polyHs)) usedHs
+    newHs = Set.foldr Map.delete polyHs unusedHs
+    hsCollect :: NodeFunction  Face RelPos (Set HsKey)
+    hsCollect (_, Node{nodeData}) = do
+      usedHsk <- getClState
+      putClState $ foldr Set.insert usedHsk $ faceHsKeys nodeData
 
 {-
 -- Redundancy processing:

@@ -20,6 +20,8 @@ module Data.Graph.HSI.Test (
     postOrder,
     postOrderFilter,
     preOrder,
+    DagAlgoData(),
+    dsDag,
     -- Init
     -- Halfspace
     Halfspace(..),

@@ -152,14 +152,14 @@ type NodePredicate n a = Node n a -> Bool
 -- ---------------------------------------------------------------------------
 
 -- Process postorder without filtering
-postOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> Dag n a
+postOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> DagAlgoData n a c
 postOrder visitFreq nodefun clstate dag =
   postOrderFilter visitFreq nodefun (const True) clstate dag
 
 -- Process postorder with a filter function to skip nodes
-postOrderFilter :: forall n a c . VisitFreq -> NodeFunction n a c -> NodePredicate n a -> c -> Dag n a -> Dag n a
+postOrderFilter :: forall n a c . VisitFreq -> NodeFunction n a c -> NodePredicate n a -> c -> Dag n a -> DagAlgoData n a c
 postOrderFilter visitFreq nodefun pred ustat dag =
-    dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag ustat)
+    execState (go `mapM` [dagStart dag]) (dsInit dag ustat)
   where
     go :: NodeKey -> State (DagAlgoData n a c) ()
     go  key = do
@@ -185,13 +185,13 @@ postOrderFilter visitFreq nodefun pred ustat dag =
 -- -------------------------------------------------------------------------------------------
 
 -- Process preorder without filtering
-preOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> Dag n a
+preOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> DagAlgoData n a c
 preOrder visitFreq nodefun clstate dag  = preOrderFilter visitFreq nodefun (const True) clstate dag
 
 -- Process preorder with a filter function to skip nodes
-preOrderFilter :: forall n a c. VisitFreq -> NodeFunction n a c -> NodePredicate n a -> c -> Dag n a -> Dag n a
+preOrderFilter :: forall n a c. VisitFreq -> NodeFunction n a c -> NodePredicate n a -> c -> Dag n a -> DagAlgoData n a c
 preOrderFilter visitFreq nodefun pred clstate dag =
-    dsDag $ execState (go `mapM` [dagStart dag]) (dsInit dag clstate)
+    execState (go `mapM` [dagStart dag]) (dsInit dag clstate)
   where
     go :: NodeKey -> State (DagAlgoData n a c) ()
     go key = do

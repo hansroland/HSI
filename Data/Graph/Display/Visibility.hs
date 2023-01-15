@@ -14,7 +14,7 @@ import qualified Data.EnumMap.Strict as Map
 -- Calculate the visibility flags for all nodes of our polytope
 visPoly :: VU.Vector Double -> VisPolytope -> VisDag
 visPoly direction poly =
-    preOrderFilter Multiple (visNode direction) condNode Visible $ polyDag poly
+    dsDag $ preOrderFilter Multiple (visNode direction) condNode Visible $ polyDag poly
     -- It's not necessary to reset the visibility field on all the nodes,
     --   as long as the new dag is not written back to the polytope.
   where

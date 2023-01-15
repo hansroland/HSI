@@ -33,7 +33,7 @@ nodeFunct (nodekey, Node {nodeKids, nodeData}) = do
 
 -- Processing on a single
 triangle42 :: Dag Triangle4 ()
-triangle42 = postOrderFilter Single nodeFunct nodeDataPred () triangle41
+triangle42 = dsDag $ postOrderFilter Single nodeFunct nodeDataPred () triangle41
 
 rslt_triangle42 :: String
 rslt_triangle42 = "DAG start = 1\n" ++
