@@ -145,9 +145,9 @@ uiLoadHss parms =
   where
     doLoad  :: (MonadIO m, MonadState UiState m ) => [VU.Vector Double] -> ExceptT Text m HsiPolytope
     doLoad vecs = do
-      let dim = 3
+      let hss = hsFromVector <$> vecs
+          dim = hsDim $ head hss                -- head: we checked empty already earlier
           initialCube = mkCube dim
-          hss = hsFromVector <$> vecs
           phs = zip ([1..]::[Int]) vecs
       liftIO $ putStrLn $ show (length phs) <>  " halfspaces: "
       putHss hss
