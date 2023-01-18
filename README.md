@@ -94,6 +94,8 @@ following diagram shows the calculated relative position:
 
 ## 2. Intersect with H<sup>-</sup>
 
+<img src="./images/Algo03.svg"/>
+
 ## 3. Intersect with H<sup>0</sup>
 
 # Higher Dimensions
