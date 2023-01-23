@@ -2,16 +2,15 @@
 
 module Data.Graph.Display.Visibility where
 
-import Data.Graph.Display.Data
-
 import Data.Graph.Dag
 import Data.Graph.HSI
+import Data.Graph.Display.Data
 
 import Control.Monad.State.Strict (when )
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.EnumMap.Strict as Map
 
--- Calculate the visibility flags for all nodes of our polytope
+-- Calculate the visibility flags for all faces of our polytope
 visPoly :: VU.Vector Double -> VisPolytope -> VisDag
 visPoly direction poly =
     dsDag $ preOrderFilter Multiple (visNode direction) condNode Visible $ polyDag poly
@@ -42,7 +41,7 @@ visPoly direction poly =
             cosDirHsvect = sp dirvect hsVect
         putClState $ calcNewVis $ nodeDim node
         -- if a face is visible, then all its kids are also visible.
-        when (vis == Visible && (nodeAttr node) == Hidden) $ do                                                            -- TODO: Use when !!
+        when (vis == Visible && (nodeAttr node) == Hidden) $ do
             let newNode = nodeSetAttr vis node
             putDag $ dagUpdateNode dag nodekey newNode
         pure ()

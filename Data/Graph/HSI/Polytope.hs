@@ -1,8 +1,6 @@
 {-# Language GeneralisedNewtypeDeriving, DerivingStrategies #-}
 {-# Language NamedFieldPuns #-}
 
-{-# LANGUAGE BangPatterns #-}     -- TODO Remove this extension
-
 module Data.Graph.HSI.Polytope where
 
 import Data.Graph.HSI.Halfspace

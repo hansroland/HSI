@@ -33,7 +33,7 @@ hsiStep poly hs = do
     let poly1 = hsiRelPosPoly hs poly
         relPosPoly = nodeAttr $ dagStartNode $ polyDag poly1
     poly2 <- checkRelPosPoly relPosPoly poly1
-    pure $ hsiIntersectH0 . polyInsertHalfspace hs . hsiIntersectHMin $ poly2
+    pure $ hsiIntersectH0 . polyInsertHalfspace hs . hsiRemoveHMinFaces $ poly2
   where
     -- Check the realtive position of a polytope
     checkRelPosPoly :: RelPos -> HsiPolytope -> Either Text HsiPolytope
@@ -72,10 +72,9 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
             | otherwise = relPos0
         eps = 0.01
 
--- Intersect the current polytope with the H- part of a Halfspace.
--- Remove Nodes, that are now outside the new halfspace
-hsiIntersectHMin :: HsiPolytope -> HsiPolytope
-hsiIntersectHMin poly@Polytope {polyDag} =
+-- Remove all faces that are in H-
+hsiRemoveHMinFaces :: HsiPolytope -> HsiPolytope
+hsiRemoveHMinFaces poly@Polytope {polyDag} =
     poly {polyDag = dsDag $ postOrder Single nodeRemove Set.empty polyDag}
   where
     nodeRemove :: NodeFunction  Face RelPos (Set NodeKey)

@@ -117,7 +117,7 @@ Processing per face: Calculate the relative position of the current face:
 
 <img src="./images/Algo02.svg"/>
 
-## 2. Intersection with H<sup>-</sup>
+## 2. Remove Faces in H<sup>-</sup>
 
 Algorithm: Postorder, Single visit.
 
@@ -134,7 +134,7 @@ Processing per face:
 
 * Process only faces with relative positions "-+" or "-0+".
 * Vertices never have relative positions "-+" or "-0+".
-* For faces with dimension 1 (*egdes*):
+* For faces with dimension 1 (*edges*):
     * Create a new vertex-face.
     * Calculate the coordiantes of the new vertex.
 * For faces with dimension n > 1:

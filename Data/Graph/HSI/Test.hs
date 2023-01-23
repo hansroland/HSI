@@ -45,7 +45,7 @@ module Data.Graph.HSI.Test (
     -- HSI Algorithm
     hsiStep,
     hsiRelPosPoly,
-    hsiIntersectHMin,
+    hsiRemoveHMinFaces,
     hsiIntersectH0
 
  ) where

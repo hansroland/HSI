@@ -19,7 +19,6 @@ roundVector vec = roundDouble <$> vec
 -- scalarproduct of 2 vectors
 sp :: VU.Vector Double -> VU.Vector Double -> Double
 sp = (VU.sum .) . VU.zipWith (*)
--- TODO: Use this function as a central scalarprocuct function !!!!! search on zipWith
 
 -- Normalize a vector
 normalize :: VU.Vector Double -> VU.Vector Double

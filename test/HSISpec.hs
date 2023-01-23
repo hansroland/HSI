@@ -39,12 +39,12 @@ showRelPosPoly hs = show $ polyNodeAttr $ hsiRelPosPoly hs mkTriangle
 -- Show the Dag with only the remaining inside nodes
 -- The polytope is the triangle
 showInsideHsDag2dim :: Halfspace -> String
-showInsideHsDag2dim hs = show $ polyDag $ hsiIntersectHMin $ hsiRelPosPoly hs mkTriangle
+showInsideHsDag2dim hs = show $ polyDag $ hsiRemoveHMinFaces $ hsiRelPosPoly hs mkTriangle
 
 -- Show the Dag with only the remaining inside nodes
 -- The polytope is the pyramide
 showInsideHsDag3dim :: Halfspace -> String
-showInsideHsDag3dim hs = show $ polyDag $ hsiIntersectHMin $ hsiRelPosPoly hs mkPyramid
+showInsideHsDag3dim hs = show $ polyDag $ hsiRemoveHMinFaces $ hsiRelPosPoly hs mkPyramid
 
 showDagAfterHsiStep :: Halfspace -> String
 showDagAfterHsiStep hs = show $ polyDag <$> hsiStep mkPyramid hs

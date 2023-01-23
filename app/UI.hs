@@ -96,7 +96,7 @@ uiCommands cmd params = do
       "list"   -> uiList
       "load"   -> uiLoadHss params
       "outdir" -> uiOutdir params
-      "pdir"   -> uiPdir params
+      "projd"  -> uiProjd params
       "size"   -> uiSize params
       _        -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
       -- The `end`command is processed in the uiLoop Function above.
@@ -275,9 +275,9 @@ uiSize params =
     fupd v = dpSetSize (point2 (VU.head v) (VU.last v))
 
 -- Set the projection direction
-uiPdir :: [Text] -> UiMonad ()
-uiPdir params = runExceptT
-        (verifyLength "pdir" 3 params >>= verifyNumTokens >>= doPdir)
+uiProjd :: [Text] -> UiMonad ()
+uiProjd params = runExceptT
+        (verifyLength "projd" 3 params >>= verifyNumTokens >>= doPdir)
          >>= report
   where
     doPdir :: (MonadIO m, MonadState UiState m) => VU.Vector Double -> ExceptT Text m ()
