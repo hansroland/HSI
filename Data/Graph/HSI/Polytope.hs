@@ -7,13 +7,15 @@ import Data.Graph.HSI.Halfspace
 import Data.Graph.HSI.Face
 import Data.Graph.HSI.RelPos
 import Data.Graph.HSI.Utils
+import Data.Graph.HSI.LinearEquationSolver
 import Data.Graph.Dag
 
 import Data.EnumMap.Strict(EnumMap)
 import qualified Data.EnumMap.Strict as Map
 
-import Data.Matrix
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector as V
+import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
 import Data.List ( sortBy )
 
@@ -66,13 +68,11 @@ polyInsertHalfspace hs poly@Polytope {polyHs} =
 -- TODO write own equation solver without fromList / toList conversion !!
 calculateVertex :: HsMap -> [HsKey] -> VU.Vector Double
 calculateVertex hsmap keys =
-    let fromRight :: Either String (VU.Vector Double) -> VU.Vector Double
+    let fromRight :: Either T.Text (VU.Vector Double) -> VU.Vector Double
         fromRight (Right b) = b
-        fromRight (Left _) = error "Polytope.hs:calculateVertex returned left"
-        echelon = rref $ fromLists $  hsMap (VU.toList . hsEquation) hsmap keys
-        lastCol = ncols <$> echelon
-        -- round and unbox the last column
-        eiVertex = asUnboxed . roundVector <$> (getCol <$> lastCol <*> echelon)
+        fromRight (Left msg) = error ("Polytope.hs:calculateVertex returned left: " <> T.unpack msg)
+        -- round the result
+        eiVertex = roundVector <$> (solve (V.fromList (hsMap hsEquation hsmap keys)))
     in fromRight eiVertex
 
 -- Return the number of faces for each Dimension
