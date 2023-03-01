@@ -5,7 +5,8 @@ module Data.Graph.HSI.LinearEquationSolver (solve) where
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as VU
-
+import Control.Monad.Trans.State.Strict
+    ( StateT(StateT, runStateT) )
 
 type Equation = VU.Vector Double
 type Matrix = V.Vector Equation
@@ -22,7 +23,6 @@ solve mat = checkMatrix mat >>= calcTriangle >>= backInsert
 -- -------------------------------------------------------------------
 -- Check input
 -- -------------------------------------------------------------------
-
 checkMatrix :: Matrix -> Either T.Text Matrix
 checkMatrix mat = checkMatrixSameLength mat >>= checkRowsCols
 
@@ -44,48 +44,44 @@ checkRowsCols mat = do
 -- -------------------------------------------------------------------
 -- Calculation
 -- -------------------------------------------------------------------
-calcTriangle :: Matrix -> Either T.Text (V.Vector Equation)
-calcTriangle mat= V.unfoldrExactNM (V.length mat) pivotStep mat
-
-pivotStep :: Matrix -> Either T.Text (Equation, Matrix)
-pivotStep  mat =
-    if abs negPivot < cLIMIT
-      then Left cNONSOLVABLE
-      else Right $ (rowp, V.map newRow newMat)
+calcTriangle :: Matrix -> Either T.Text (V.Vector Equation, Matrix)
+calcTriangle mat0 = runStateT (sequence (StateT . pivotStep <$> ops)) mat0
   where
-    (rowp, newMat) = getNextPivot mat
-    tailrowp = VU.tail rowp
-    negPivot = negate $ VU.head rowp
-    -- Apply the pivot to a row
-    newRow :: Equation -> Equation
-    newRow row = VU.zipWith (+)
+    len0 = V.length mat0
+    ops = V.replicate (pred len0) 0
+    venum = V.enumFromN (0::Int) len0
+
+    pivotStep :: Int -> Matrix -> Either T.Text (Equation, Matrix)
+    pivotStep _ mat =
+        if abs negPivot < cLIMIT
+        then Left cNONSOLVABLE
+        else Right $ (pivotrow, V.map newRow newMat)
+      where
+        ixprow = snd $ maximum $ V.zip (V.map (abs . VU.head) mat) venum
+        pivotrow = (V.!) mat ixprow
+        newMat = V.take ixprow mat <> V.drop (ixprow + 1) mat
+
+        -- Apply the pivot to a row
+        newRow :: Equation -> Equation
+        newRow row = VU.zipWith (+)
                      (applyPivot (VU.head row))
                      (VU.tail row)
-    applyPivot :: Double -> Equation
-    applyPivot hdRow = VU.map (hdRow / negPivot *) tailrowp
 
--- Find biggest pivot in first column.
--- Remove row with pivot from matrix
--- Return pivot row and new matrix
-getNextPivot :: Matrix -> (Equation, Matrix)
-getNextPivot mat
-    | len > 1 = (rowp, strtRows <> V.tail endRows)
-    | otherwise = (V.head mat, V.empty)
-  where
-    len = V.length mat
-    -- Get the index of the row with biggest pivot
-    -- Versions with elemIndex or maxIndexBy are much slower
-    -- absvect = V.map (abs . VU.head) mat
-    -- ixabs = V.map swap $ V.indexed absvect
-    -- ixrow = snd $ V.maximum ixabs
-    -- ixrow = V.maxIndexBy (\x y -> compare (abshead x) (abshead y)) mat
-    -- abshead = abs . VU.head
-    ixrow = snd $ V.maximum $ V.zip (V.map (abs . VU.head) mat) (V.enumFromN 0 len)
-    (strtRows, endRows) = V.splitAt ixrow mat
-    rowp = V.head endRows
+        applyPivot :: Double -> Equation
+        applyPivot hdRow = VU.map (hdRow / negPivot *) $ tailprow
+        -- The next 2 values do not change between rows in applyPivot!
+        tailprow = VU.tail pivotrow
+        negPivot = negate $ VU.head pivotrow
 
-backInsert :: V.Vector Equation -> Either T.Text (VU.Vector Double)
-backInsert eqs = Right $ V.foldr stepInsert VU.empty eqs
+backInsert :: (V.Vector Equation, Matrix) -> Either T.Text (VU.Vector Double)
+backInsert (eqs , ress) = do
+    let res = V.head ress
+        piv = VU.head res
+        val = VU.last res
+        xn  = val / piv
+    if  abs piv < cLIMIT
+      then Left cNONSOLVABLE
+      else Right $ V.foldr stepInsert (VU.singleton xn) eqs
   where
     stepInsert :: Equation -> VU.Vector Double -> VU.Vector Double
     stepInsert equat xs =

@@ -71,6 +71,7 @@ library libhsi
     build-depends:
         base ^>=4.16.1.0,
         containers ^>=0.6.5.1,
+        transformers,
         enummapset,
         mtl ^>=2.2.2,
         vector,
