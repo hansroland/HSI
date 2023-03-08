@@ -25,7 +25,7 @@ dpInit :: DispParams
 dpInit = DispParams
     { dpSize = point2 400 300,
       dpPdir = VU.fromList [3,1,-1],
-      dpIndir = "examples",
+      dpIndir = ".",
       dpOutdir = "./",
       dpFilename = "poly",
       dpZaxis = VU.fromList [0,0,1],
