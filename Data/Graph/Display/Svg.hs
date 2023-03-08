@@ -22,7 +22,7 @@ import System.FilePath
 handler :: SomeException -> Text
 handler e = T.pack $ show e
 
--- Write the lines of the drawing as a svg to a file
+-- Plot the 2-dim edges of the polytope as a svg to a file
 -- Here we also change the y-coordinate.
 -- Normally the origin is botton left, however in svg the
 -- origin is top left. Here we change.
@@ -34,9 +34,14 @@ plot dparms lns = do
         filename = dpFilename dparms
         svgFile = outdir </> filename <.> "svg"
         svgdata = svgDoc dparms $ svgHdr <> mconcat svgLines
+        reportBrowser :: Bool -> IO ()
+        reportBrowser True  = putStrLn "Browser Ok"
+        reportBrowser False = putStrLn "Browser failed"
+
     handleExceptT handler $ liftIO $ do
         TLIO.writeFile svgFile $ renderText svgdata
-        openBrowser svgFile >>= print
+        putStrLn $ "File written: " <> svgFile
+        openBrowser svgFile >>= reportBrowser
 
 -- Create the Svg document
 svgDoc :: DispParams -> Element -> Element
