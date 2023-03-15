@@ -35,7 +35,7 @@ checkMatrixSameLength mat = do
 
 checkRowsCols :: Matrix -> Either T.Text Matrix
 checkRowsCols mat = do
-    let numRows = V.length mat
+    let numRows = length mat
         numCols = VU.length $ V.head mat
     if numRows + 1 == numCols
         then Right mat
@@ -49,7 +49,6 @@ calcTriangle mat0 = runStateT (sequence (StateT . pivotStep <$> ops)) mat0
   where
     len0 = V.length mat0
     ops = V.replicate (pred len0) 0
-    venum = V.enumFromN (0::Int) len0
 
     pivotStep :: Int -> Matrix -> Either T.Text (Equation, Matrix)
     pivotStep _ mat =
@@ -57,9 +56,15 @@ calcTriangle mat0 = runStateT (sequence (StateT . pivotStep <$> ops)) mat0
         then Left cNONSOLVABLE
         else Right $ (pivotrow, V.map newRow newMat)
       where
-        ixprow = snd $ maximum $ V.zip (V.map (abs . VU.head) mat) venum
+        ixprow = snd $ maximum $ V.imap (\ix e -> ((abs . VU.head) e, ix)) mat
         pivotrow = (V.!) mat ixprow
-        newMat = V.take ixprow mat <> V.drop (ixprow + 1) mat
+        -- newMat = V.ifilter (\ix _ -> ix /= ixprow) mat
+        newMat = V.imapMaybe ixFilter mat   -- This is faster than V.ifilter !!
+          where
+            ixFilter :: Int -> a -> Maybe a
+            ixFilter ix v
+                | ix == ixprow  = Nothing
+                | otherwise  = Just v
 
         -- Apply the pivot to a row
         newRow :: Equation -> Equation
@@ -68,7 +73,7 @@ calcTriangle mat0 = runStateT (sequence (StateT . pivotStep <$> ops)) mat0
                      (VU.tail row)
 
         applyPivot :: Double -> Equation
-        applyPivot hdRow = VU.map (hdRow / negPivot *) $ tailprow
+        applyPivot hdRow = VU.map (hdRow / negPivot *) tailprow
         -- The next 2 values do not change between rows in applyPivot!
         tailprow = VU.tail pivotrow
         negPivot = negate $ VU.head pivotrow
@@ -88,4 +93,4 @@ backInsert (eqs , ress) = do
         let piv = VU.head equat
             as = (VU.tail . VU.init) equat
             s = VU.last equat - (VU.sum $ VU.zipWith (*) as xs)
-        in VU.cons (s/piv)  xs
+        in VU.cons (s/piv) xs
