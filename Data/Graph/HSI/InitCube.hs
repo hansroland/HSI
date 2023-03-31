@@ -120,7 +120,7 @@ mkCube dim = Polytope { polyHs = hsmap, polyDag = dag}
     mkHalfspace cf = mkHs (VU.fromList (coHsCoeff <$> cf)) coValMin
 
     mkVector :: CFace -> VU.Vector Double
-    mkVector cf = VU.fromList $ (coCoordVal <$> cf)
+    mkVector cf = VU.fromList (coCoordVal <$> cf)
 
 -- -------------------------------------------------------------------
 -- Generate all CFaces for a n-dimensional cube
