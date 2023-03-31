@@ -28,11 +28,11 @@ library libdag
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:  base ^>=4.16.1.0,
-                    containers ^>=0.6.5.1,
+    build-depends:  base,
+                    containers,
                     enummapset,
                     transformers,
-                    mtl ^>=2.2.2,
+                    mtl,
                     matrix,
                     vector
 
@@ -69,11 +69,11 @@ library libhsi
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.16.1.0,
-        containers ^>=0.6.5.1,
+        base,
+        containers,
         transformers,
         enummapset,
-        mtl ^>=2.2.2,
+        mtl,
         vector,
         libdag,
         svg-builder,
@@ -96,10 +96,10 @@ executable hsi
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.16.1.0,
-        containers ^>=0.6.5.1,
+        base,
+        containers,
         enummapset,
-        mtl ^>=2.2.2,
+        mtl,
         matrix,
         vector,
         text,
@@ -129,9 +129,9 @@ test-suite test
                       InitSpec,
                       HSISpec
     build-depends:
-        base ^>=4.16.1.0,
-        containers ^>=0.6.5.1,
-        mtl ^>=2.2.2,
+        base,
+        containers,
+        mtl,
         enummapset,
         matrix,
         vector,

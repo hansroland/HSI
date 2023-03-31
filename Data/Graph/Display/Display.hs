@@ -154,10 +154,10 @@ drawObjToLines showHidden (DrawObj edges pmap) = catMaybes $ map (segToLine show
 --   2. Scale the drawing up or down to 85% of the size of the drawing board.
 --   3. Move the drawing into the center of the drawing board.
 drawObjCenter :: P2 -> DrawObj -> DrawObj
-drawObjCenter extBoard (drawObj@DrawObj{drVerts}) =
+drawObjCenter extBoard drawObj@DrawObj{drVerts} =
     let points = Map.elems drVerts
-        maxxy = foldr max_xy (point2 (-1E10) (-1E10)) points    -- the point with the biggest coordinae
-        minxy = foldr min_xy (point2 1E10 1E10) points          -- the point with the smallest coord
+        maxxy = foldr maxXy (point2 (-1E10) (-1E10)) points    -- the point with the biggest coordinae
+        minxy = foldr minXy (point2 1E10 1E10) points          -- the point with the smallest coord
         centImg = divBy (maxxy + minxy) 2                       -- The center of the points
         centBoard = divBy extBoard 2                            -- The center of the board
         extImg = maxxy - minxy                                  -- The size of the image
@@ -170,7 +170,7 @@ scaleFactor :: P2 -> P2 -> Double
 scaleFactor v1 v2 =
     let check 0 = 1
         check d = d
-    in  (min ((x v1)/check (x v2)) ((y v1)/check (y v2)))
+    in  min (x v1 / check (x v2)) (y v1 / check (y v2))
 
 -- Adjust the drawing points, so the z-axis always points upwards.
 adjustOrientation2 :: Vector Double -> PointMap -> PointMap

@@ -43,7 +43,7 @@ cfDim = Dim . length . filter (== Zero)
 
 -- Calculate the NodeKey of a CFace
 nodekeyVal :: CFace -> NodeKey
-nodekeyVal cFace = foldr (+) 0 $ zipWith (*) (nkeyVal <$> cFace)  powers3
+nodekeyVal cFace = sum $ zipWith (*) (nkeyVal <$> cFace)  powers3
   where
     powers3 :: [NodeKey]
     powers3 = [negate (3^n) | n <- [(0:: Int)..] ]
@@ -77,7 +77,7 @@ subsAtN cp n = [replCoeffAtN cp Plus n,  replCoeffAtN cp Minus n]
 subs ::  CFace -> [NodeKey]
 subs es =
     let ixs = elemIndices Zero es
-        cfaces = concat $ subsAtN es <$> ixs
+        cfaces = concatMap (subsAtN es) ixs
     in  nodekeyVal <$> cfaces
 
 -- --------------------------------------------------------------------
@@ -93,7 +93,7 @@ mkCube dim = Polytope { polyHs = hsmap, polyDag = dag}
     hsmap = Map.fromList $ zip keys hsvects
       where
         dim2s = filter (\cf -> cfDim cf == (dim - 1)) cubeFaces
-        keys = (head . cfHskeyVals ) <$> dim2s
+        keys = head . cfHskeyVals <$> dim2s
         hsvects = mkHalfspace <$> dim2s
 
     dag :: HsiDag

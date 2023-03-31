@@ -1,5 +1,3 @@
-{-# Language NamedFieldPuns #-}
-
 module Data.Graph.Display.DispParams where
 
 import Data.Graph.Display.Vect2

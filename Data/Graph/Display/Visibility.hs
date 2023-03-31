@@ -1,5 +1,3 @@
-{-# Language NamedFieldPuns #-}
-
 module Data.Graph.Display.Visibility where
 
 import Data.Graph.Dag
@@ -41,10 +39,9 @@ visPoly direction poly =
             cosDirHsvect = sp dirvect hsVect
         putClState $ calcNewVis $ nodeDim node
         -- if a face is visible, then all its kids are also visible.
-        when (vis == Visible && (nodeAttr node) == Hidden) $ do
+        when (vis == Visible && nodeAttr node == Hidden) $ do
             let newNode = nodeSetAttr vis node
             putDag $ dagUpdateNode dag nodekey newNode
-        pure ()
 
     -- Predicate function to stop processing on nodes that are already marked Visible
     -- and do not process Vertices.

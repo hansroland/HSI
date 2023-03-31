@@ -3,8 +3,8 @@
 module Data.Graph.Display.Vect2 (
     P2,
     point2,
-    max_xy,
-    min_xy,
+    maxXy,
+    minXy,
     divBy,
     multWith,
     x, y)
@@ -19,9 +19,9 @@ type P2 = VU.Vector Double
 
 -- This should be defined in some simple linear algebra package
 instance (Num a, VU.Unbox a) => Num (VU.Vector a) where
-    (+) v1 v2 = VU.zipWith (+) v1 v2
-    (*) v1 v2 = VU.zipWith (*) v1 v2
-    negate v = VU.map negate v
+    (+)= VU.zipWith (+)
+    (*) = VU.zipWith (*)
+    negate = VU.map negate
     abs _    =  error "P2 dosen't support fromInteger"
     fromInteger _             = error "P2 dosen't support fromInteger"
     signum _                  = error "P2 dosen't support signum"
@@ -34,7 +34,7 @@ divBy :: P2 -> Double -> P2
 divBy v d = VU.map (/d) v
 
 multWith :: Double -> P2 -> P2
-multWith s v = VU.map (s *) v
+multWith s = VU.map (s *)
 
 -- Accessor function: x is the first coordinate
 x :: P2  -> Double
@@ -46,10 +46,10 @@ y v = v VU.! 1
 
 -- Get the maximum of the x and y coordinates
 -- ATTENTION: This is a non standard function, it does the maximum by coordinates!!
-max_xy :: P2 -> P2 -> P2
-max_xy v1 v2 = VU.zipWith (max) v1 v2
+maxXy :: P2 -> P2 -> P2
+maxXy = VU.zipWith max
 
 -- Get the minimum of the x and y coordinates
 -- ATTENTION: This is a non standard function, it does the minimum by coordinates!!
-min_xy :: P2 -> P2 -> P2
-min_xy v1 v2 = VU.zipWith (min) v1 v2
+minXy :: P2 -> P2 -> P2
+minXy = VU.zipWith min

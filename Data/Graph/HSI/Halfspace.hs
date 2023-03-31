@@ -46,7 +46,7 @@ hsEquation hs = VU.snoc (hsV hs) (hsD hs)
 
 -- Map a list of HsKeys to something
 hsMap :: (Halfspace -> b) -> HsMap -> [HsKey] -> [b]
-hsMap hsFun hsmap keys = (hsFun . (hsmap Map.!)) <$> keys
+hsMap hsFun hsmap keys = hsFun . (hsmap Map.!) <$> keys
 
 -- Normalize the vector of a Halfspace
 hsNormalize :: Halfspace -> Halfspace

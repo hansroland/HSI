@@ -1,5 +1,4 @@
-{-# Language GeneralisedNewtypeDeriving, DerivingStrategies #-}
-{-# Language NamedFieldPuns #-}
+{-# Language DerivingStrategies #-}
 
 module Data.Graph.HSI.Face where
 
@@ -25,7 +24,7 @@ isVertex (Vertex _ _ ) = True
 isVertex _             = False
 
 -- Make a new Face representing a vertex
-mkVertex :: [HsKey] -> (Vector Double) -> Face
+mkVertex :: [HsKey] -> Vector Double -> Face
 mkVertex hsKeys v = Vertex v hsKeys
 
 -- Add a new Halfspace key to a Face

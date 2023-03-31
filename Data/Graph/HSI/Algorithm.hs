@@ -60,7 +60,7 @@ hsiRelPosPoly hs poly@Polytope {polyDag = dag0 } =
     relPosFace Node{nodeData = Vertex vec _ } _ = calcRelPosVertex vec
     -- Calculate the relative position for a nonVertex
     relPosFace node@Node{nodeData = Nonvert _ _ } dag =
-        mconcat $ (nodeAttr . dagNode dag) <$> nodeKids node
+        mconcat $ nodeAttr . dagNode dag <$> nodeKids node
     -- Calculate relPos for a Vertex
     calcRelPosVertex :: VU.Vector Double -> RelPos
     calcRelPosVertex vertex = relPos $ roundDouble $ distance hs vertex
@@ -85,7 +85,7 @@ hsiRemoveHMinFaces poly@Polytope {polyDag} =
             if nodeAttr == relPosM || nodeAttr == relPosM0
               then (dag {dagNodes = Map.delete key dagNodes}, Set.insert key deleted )
               else
-                let newNode = node {nodeKids = nodeKids \\ (Set.toList deleted)}
+                let newNode = node {nodeKids = nodeKids \\ Set.toList deleted}
                 in (dagUpdateNode dag key newNode, deleted)
       putDag newDag
       putClState newDeleted
@@ -107,7 +107,6 @@ hsiIntersectH0 (hskey, poly@Polytope{polyHs, polyDag}) = poly{polyDag = newDag}
                 filter (\gk -> relPos0 == nodeAttr (snd gk)) grandKids
           newKey <- mkNewNode hsmap grandKidsKeys node
           linkToParent newKey key
-      pure ()
 
     -- Make a new Node with a face: insert it into the dag
     -- and return both, key and node.

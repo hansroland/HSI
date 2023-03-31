@@ -19,7 +19,6 @@ import qualified Data.Set as Set
 
 import Control.Monad.State.Strict
     ( State, MonadState(put, get), gets, modify', execState )
-import Data.Maybe ( fromMaybe )
 import Data.List ((\\), nub)
 
 -- | Directed Acyclic Graphs.
@@ -46,7 +45,7 @@ instance (Show n, Show a) => Show (Dag n a) where
 -- | Return the node with a given NodeKey.
 -- We don't check for failure. Every NodeKey we use, MUST exist in the map!
 dagNode :: Dag n a -> NodeKey -> Node n a
-dagNode dag key = (dagNodes dag) Map.! key
+dagNode dag key = dagNodes dag Map.! key
 
 -- | Return the start node
 dagStartNode :: Dag n a -> Node n a
@@ -54,7 +53,7 @@ dagStartNode dag = dagNode dag $ dagStart dag
 
 -- | Initialize a DAG with the root node
 dagInit :: NodeKey -> Dag n a
-dagInit (NodeKey key) = Dag {dagStart = (NodeKey key), dagNodes = Map.empty}
+dagInit (NodeKey key) = Dag {dagStart = NodeKey key, dagNodes = Map.empty}
 
 -- | Create new node for a given NodeKey and insert it into the dag
 dagCreateNode :: NodeKey -> [NodeKey] -> n -> a -> Dag n a -> Dag n a
@@ -64,7 +63,7 @@ dagCreateNode key subs nd attr dag =
 -- | Insert a new Node insert it into the dag. Return the new NodeKey
 dagInsertNode :: Node n a -> Dag n a -> (NodeKey, Dag n a)
 dagInsertNode node dag =
-    let maxKey = fromMaybe 0 $ fst <$> (Map.lookupMax $ dagNodes dag)
+    let maxKey = maybe 0 fst (Map.lookupMax $ dagNodes dag)
         hsKey = (1 + maxKey)
         newnodes = Map.insert hsKey node $ dagNodes dag
     in  (hsKey, dag{dagNodes = newnodes})
@@ -79,7 +78,7 @@ dagGrandNodes :: Dag n a -> Node n a ->[(NodeKey, Node n a)]
 dagGrandNodes dag node =
   let kidskeys = nodeKids node
       kidsnodes = dagNode dag <$> kidskeys
-      grandkeys = nub $ concat $ nodeKids <$> kidsnodes
+      grandkeys = nub $ concatMap nodeKids kidsnodes
       grandnodes = dagNode dag <$> grandkeys
   in zip grandkeys grandnodes
 
@@ -165,8 +164,8 @@ type NodePredicate n a = Node n a  -- ^ Current Node
 -- | Traversal: Visit all nodes in postorder (bottom up) sequence.
 --  Execute the NodeFunction on every node.
 postOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> DagAlgoData n a c
-postOrder visitFreq nodefun clstate dag =
-  postOrderFilter visitFreq nodefun (const True) clstate dag
+postOrder visitFreq nodefun =
+  postOrderFilter visitFreq nodefun (const True)
 
 -- | Traversal: Visit nodes (and subnodes) in postorder (bottom up) sequence.
 --  Only Nodes that fullfill the predicate function will be visited.
@@ -186,7 +185,7 @@ postOrderFilter visitFreq nodefun pred ustat dag =
                 modifyVisited visitFreq $ Set.insert key
                 -- Get the direct children that haven't been visited
                 visited <- gets dsVisited
-                let subkeys = (nodeKids node) \\ (Set.toList visited)
+                let subkeys = nodeKids node \\ Set.toList visited
                 -- Recursion over the children
                 _ <- go `mapM` subkeys
                 -- Visit the current node
@@ -202,7 +201,7 @@ postOrderFilter visitFreq nodefun pred ustat dag =
 -- | Traversal: Visit all nodes in preorder (top down) sequence.
 --  Execute the NodeFunction on every node.
 preOrder :: VisitFreq -> NodeFunction n a c -> c -> Dag n a -> DagAlgoData n a c
-preOrder visitFreq nodefun clstate dag  = preOrderFilter visitFreq nodefun (const True) clstate dag
+preOrder visitFreq nodefun  = preOrderFilter visitFreq nodefun (const True)
 
 -- | Traversal: Visit nodes (and subnodes) in preorder (top down) sequence.
 --  Only Nodes that fullfill the predicate function will be visited.
@@ -224,7 +223,7 @@ preOrderFilter visitFreq nodefun pred clstate dag =
                 modifyVisited visitFreq $ Set.insert key
                 visited <- gets dsVisited
                 -- Get the direct children that haven't been visited
-                let subkeys = (nodeKids node) \\ (Set.toList visited)
+                let subkeys = nodeKids node \\ Set.toList visited
                 -- Recursion over the children
                 _ <- go `mapM` subkeys
                 pure ()

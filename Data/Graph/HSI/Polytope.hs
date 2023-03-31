@@ -1,5 +1,6 @@
-{-# Language GeneralisedNewtypeDeriving, DerivingStrategies #-}
+{-# Language DerivingStrategies #-}
 {-# Language NamedFieldPuns #-}
+{-# Language TupleSections #-}
 
 module Data.Graph.HSI.Polytope where
 
@@ -16,7 +17,6 @@ import qualified Data.EnumMap.Strict as Map
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as V
 import qualified Data.Text as T
-import Data.Maybe (fromMaybe)
 import Data.List ( sortBy )
 
 -- Type Synonyms
@@ -28,7 +28,7 @@ data Polytope a = Polytope { polyHs :: !HsMap, polyDag :: !(Dag Face a)}
 instance Show a => Show (Polytope a) where
   show poly@Polytope {polyHs}  =
        concat ("Polytope Halfspaces:" : nl : map showHsAssoc (Map.toAscList polyHs)) ++
-       concat ("Polytope Faces:" : (map showNodeAssoc $ sortNodeAssoc $ polyNodeAssocs poly ))
+       concat ("Polytope Faces:" : map showNodeAssoc (sortNodeAssoc $ polyNodeAssocs poly ))
     where
         showHsAssoc ::  (HsKey, Halfspace) -> String
         showHsAssoc (key, hs) = show key ++ " -> " ++ show hs ++ nl
@@ -58,7 +58,7 @@ polyNodeAttr = nodeAttr . dagStartNode . polyDag
 -- Add a new halfspace to the polytope
 polyInsertHalfspace :: Halfspace -> Polytope a -> (HsKey, Polytope a)
 polyInsertHalfspace hs poly@Polytope {polyHs} =
-    let maxKey = fromMaybe 0 $ fst <$> (Map.lookupMax $ polyHs)
+    let maxKey = maybe 0 fst (Map.lookupMax polyHs)
         hsKey = (1 + maxKey)
         newhsmap = Map.insert hsKey hs polyHs
     in  (hsKey, poly {polyHs = newhsmap})
@@ -72,7 +72,7 @@ calculateVertex hsmap keys =
         fromRight (Right b) = b
         fromRight (Left msg) = error ("Polytope.hs:calculateVertex returned left: " <> T.unpack msg)
         -- round the result
-        eiVertex = roundVector <$> (solve (V.fromList (hsMap hsEquation hsmap keys)))
+        eiVertex = roundVector <$> solve (V.fromList (hsMap hsEquation hsmap keys))
     in fromRight eiVertex
 
 -- Return the number of faces for each Dimension
@@ -80,7 +80,7 @@ polyStats :: Polytope a -> EnumMap Dim Int
 polyStats = frequencies . fmap faceDim . polyFaces
   where
     frequencies :: Enum k => [k] -> EnumMap k Int
-    frequencies ks = Map.fromListWith (+) $ zip ks (repeat 1)
+    frequencies ks = Map.fromListWith (+) $ map (,1) ks
 
 -- Check whether Eulers formula is valid for the polytope.
 -- Note: If the formula is not valid, then there was a bug in the algorithm.

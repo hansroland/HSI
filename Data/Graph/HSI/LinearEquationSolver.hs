@@ -29,7 +29,7 @@ checkMatrix mat = checkMatrixSameLength mat >>= checkRowsCols
 checkMatrixSameLength :: Matrix -> Either T.Text Matrix
 checkMatrixSameLength mat = do
     let length1 = VU.length $ V.head mat
-    if all (\r -> (VU.length r == length1)) mat
+    if all (\r -> VU.length r == length1) mat
         then Right mat
         else Left "Not all equations have the same length"
 
@@ -45,7 +45,7 @@ checkRowsCols mat = do
 -- Calculation
 -- -------------------------------------------------------------------
 calcTriangle :: Matrix -> Either T.Text (V.Vector Equation, Matrix)
-calcTriangle mat0 = runStateT (sequence (StateT . pivotStep <$> ops)) mat0
+calcTriangle mat0 = runStateT (mapM (StateT . pivotStep) ops) mat0
   where
     len0 = V.length mat0
     ops = V.replicate (pred len0) 0
@@ -92,5 +92,5 @@ backInsert (eqs , ress) = do
     stepInsert equat xs =
         let piv = VU.head equat
             as = (VU.tail . VU.init) equat
-            s = VU.last equat - (VU.sum $ VU.zipWith (*) as xs)
+            s = VU.last equat - VU.sum (VU.zipWith (*) as xs)
         in VU.cons (s/piv) xs
