@@ -32,7 +32,7 @@ visPoly direction poly =
               | otherwise        = vis
             -- The dimension of a hyperplane is one less, than the dimension of
             --   our space
-            hyperDim = Dim (VU.length direction - 1)
+            hyperDim = (fromInteger . toInteger) (VU.length direction - 1)
             -- `hsmap` we get from the enclosing closure (where above)
             hskey = head $ nodeHsKeys node
             hsVect = hsEquation $ hsmap Map.! hskey

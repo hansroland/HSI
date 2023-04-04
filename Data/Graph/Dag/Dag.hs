@@ -9,7 +9,7 @@
 -- DAG Directed Acyclic Graph to be used for the Halfspace Intersection project.
 module Data.Graph.Dag.Dag where
 
-import Data.Graph.Dag.Node ( NodeKey(..), Node(Node, nodeKids, nodeAttr) )
+import Data.Graph.Dag.Node ( NodeKey, Node(Node, nodeKids, nodeAttr) )
 
 import Prelude hiding (pred)
 import Data.EnumMap.Strict (EnumMap)
@@ -53,7 +53,7 @@ dagStartNode dag = dagNode dag $ dagStart dag
 
 -- | Initialize a DAG with the root node
 dagInit :: NodeKey -> Dag n a
-dagInit (NodeKey key) = Dag {dagStart = NodeKey key, dagNodes = Map.empty}
+dagInit key = Dag {dagStart = key, dagNodes = Map.empty}
 
 -- | Create new node for a given NodeKey and insert it into the dag
 dagCreateNode :: NodeKey -> [NodeKey] -> n -> a -> Dag n a -> Dag n a

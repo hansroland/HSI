@@ -2,7 +2,7 @@ module Data.Graph.HSI.InitCube (mkCube) where
 
 import Data.Graph.Dag
 import Data.Graph.HSI.Face ( Face(..), HsiNode, HsiDag )
-import Data.Graph.HSI.Halfspace ( HsKey, Halfspace, mkHs, Dim(..) )
+import Data.Graph.HSI.Halfspace ( HsKey, Halfspace, mkHs, Dim )
 import Data.Graph.HSI.Polytope ( Polytope(..), HsiPolytope )
 
 import Data.List ( elemIndices )
@@ -39,7 +39,7 @@ type CFace = [Coeff]
 
 -- Calculate the dimenstion of a CFace
 cfDim::  CFace -> Dim
-cfDim = Dim . length . filter (== Zero)
+cfDim = fromInteger . toInteger . length . filter (== Zero)
 
 -- Calculate the NodeKey of a CFace
 nodekeyVal :: CFace -> NodeKey

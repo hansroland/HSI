@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
 module Data.Graph.HSI.RelPos
-(RelPos(),
+(RelPos,
 relPosP,  relPos0, relPosM,
 relPosP0, relPosM0,
 relPosMP, relPosM0P

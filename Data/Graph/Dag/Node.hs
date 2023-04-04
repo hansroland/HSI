@@ -3,7 +3,14 @@
 {-# Language DeriveFunctor #-}
 {-# Language NamedFieldPuns #-}
 
-module Data.Graph.Dag.Node where
+module Data.Graph.Dag.Node (
+    NodeKey,
+    Node(..),
+    nodeAddKey,
+    nodeAddKeys,
+    nodeSetData
+
+) where
 
 -- | Keys or IDs of a node.
 -- An unique value for every node.

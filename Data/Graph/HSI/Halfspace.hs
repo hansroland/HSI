@@ -2,7 +2,20 @@
 {-# Language NamedFieldPuns #-}
 
 -- {-# Language GeneralisedNewtypeDeriving, DeriveFunctor, DeriveFoldable, DeriveTraversable, DerivingStrategies #-}
-module Data.Graph.HSI.Halfspace where
+module Data.Graph.HSI.Halfspace (
+    Halfspace,
+    Dim,
+    HsKey,
+    HsMap,
+    mkHs,
+    hsFromList,
+    hsFromVector,
+    hsEquation,
+    hsMap,
+    hsNormalize,
+    distance,
+    hsDim
+)where
 
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as VU
