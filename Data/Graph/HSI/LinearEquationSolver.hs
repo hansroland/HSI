@@ -5,8 +5,7 @@ module Data.Graph.HSI.LinearEquationSolver (solve) where
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as VU
-import Control.Monad.Trans.State.Strict
-    ( StateT(StateT, runStateT) )
+import Control.Monad.Trans.State.Strict( StateT(StateT, runStateT) )
 
 type Equation = VU.Vector Double
 type Matrix = V.Vector Equation
@@ -18,37 +17,15 @@ cNONSOLVABLE:: T.Text
 cNONSOLVABLE = "Attempt to solve a non-solvable equation system"
 
 solve :: Matrix -> Either T.Text (VU.Vector Double)
-solve mat = checkMatrix mat >>= calcTriangle >>= backInsert
-
--- -------------------------------------------------------------------
--- Check input
--- -------------------------------------------------------------------
-checkMatrix :: Matrix -> Either T.Text Matrix
-checkMatrix mat = checkMatrixSameLength mat >>= checkRowsCols
-
-checkMatrixSameLength :: Matrix -> Either T.Text Matrix
-checkMatrixSameLength mat = do
-    let length1 = VU.length $ V.head mat
-    if all (\r -> VU.length r == length1) mat
-        then Right mat
-        else Left "Not all equations have the same length"
-
-checkRowsCols :: Matrix -> Either T.Text Matrix
-checkRowsCols mat = do
-    let numRows = length mat
-        numCols = VU.length $ V.head mat
-    if numRows + 1 == numCols
-        then Right mat
-        else Left "Number of rows is not compatible with number of columns"
+solve mat = calcTriangle mat >>= backInsert
 
 -- -------------------------------------------------------------------
 -- Calculation
 -- -------------------------------------------------------------------
 calcTriangle :: Matrix -> Either T.Text (V.Vector Equation, Matrix)
-calcTriangle mat0 = runStateT (mapM (StateT . pivotStep) ops) mat0
+calcTriangle mat0= runStateT (mapM (StateT . pivotStep) ops) mat0
   where
-    len0 = V.length mat0
-    ops = V.replicate (pred len0) 0
+    ops = V.replicate (length mat0 - 1) 0
 
     pivotStep :: Int -> Matrix -> Either T.Text (Equation, Matrix)
     pivotStep _ mat =
