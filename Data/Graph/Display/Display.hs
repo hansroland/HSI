@@ -88,7 +88,7 @@ getVertMap dag =
         getVec (Vertex vec _) = vec
         getVec _ = error "Severe error in Display.hs:getVertMap" --we use `isVertex`
         vertexAssocs = filter (isVertex . nodeData. snd) $ dagNodeAssocs dag
-        rotVertAssocs = (fmap (getVec . nodeData)) <$> vertexAssocs
+        rotVertAssocs = fmap (getVec . nodeData) <$> vertexAssocs
     in  Map.fromList rotVertAssocs
 
 -- Create the edges to draw
