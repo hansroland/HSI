@@ -65,7 +65,7 @@ backInsert (eqs , ress) = do
         xn  = val / piv
     if  abs piv < cLIMIT
       then Left cNONSOLVABLE
-      else Right $ V.foldr stepInsert (VU.singleton xn) eqs
+      else Right $ V.foldr' stepInsert (VU.singleton xn) eqs
   where
     stepInsert :: Equation -> VU.Vector Double -> VU.Vector Double
     stepInsert equat xs =
