@@ -40,7 +40,6 @@ library libdag
     default-language: Haskell2010
     ghc-options:         -Wall
 
-
 library libhsi
     exposed-modules:
         Data.Graph.HSI,
@@ -53,7 +52,6 @@ library libhsi
         Data.Graph.HSI.Polytope,
         Data.Graph.HSI.InitCube,
         Data.Graph.HSI.Algorithm
-
     -- Modules included in this library but not exported.
     other-modules:
         Data.Graph.HSI.Halfspace,
@@ -75,6 +73,7 @@ library libhsi
         enummapset,
         mtl,
         vector,
+        vector-builder,
         libdag,
         svg-builder,
         open-browser,
@@ -100,7 +99,6 @@ executable hsi
         containers,
         enummapset,
         mtl,
-        matrix,
         vector,
         text,
         libdag,
