@@ -1,4 +1,3 @@
-{-# Language NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}   -- used for mtl functions
 {-# LANGUAGE OverloadedStrings #-}
@@ -117,7 +116,7 @@ uiAuto params = runExceptT
 -- Change the input directory for reading files
 uiIndir :: [Text] -> UiMonad ()
 uiIndir parms = runExceptT (
-    (verifyLength1 "indir" (T.unpack <$> parms)) >>= verifyDirExists >>= doIndir)
+    verifyLength1 "indir" (T.unpack <$> parms) >>= verifyDirExists >>= doIndir)
       >>= report
   where
     doIndir :: (MonadIO m, MonadState UiState m ) => FilePath -> ExceptT Text m ()
@@ -126,7 +125,7 @@ uiIndir parms = runExceptT (
 -- Change the output directory for reading files
 uiOutdir :: [Text] -> UiMonad ()
 uiOutdir parms = runExceptT (
-    (verifyLength1 "outir" (T.unpack <$> parms)) >>= verifyDirExists >>= doOutdir)
+    verifyLength1 "outir" (T.unpack <$> parms) >>= verifyDirExists >>= doOutdir)
       >>= report
   where
     doOutdir :: (MonadIO m, MonadState UiState m ) => FilePath -> ExceptT Text m ()
@@ -135,12 +134,11 @@ uiOutdir parms = runExceptT (
 -- Read the halfspaces from a file and calculate the polytope
 uiLoadHss :: [Text] -> UiMonad ()
 uiLoadHss parms =
-  (runExceptT $ do
+  runExceptT (do
     poly <- verifyLength1 "load" parms >>= verifyLoad >>= verifyDims >>= doLoad
     dparms <- gets uiDparms
-    case dpAuto dparms of
-      True  -> doHsi poly
-      False -> pure ()
+    when (dpAuto dparms) $ doHsi poly
+
   ) >>= report
   where
     doLoad  :: (MonadIO m, MonadState UiState m ) => [VU.Vector Double] -> ExceptT Text m HsiPolytope
@@ -157,14 +155,14 @@ uiLoadHss parms =
                   Text -> ExceptT Text m [VU.Vector Double]
     verifyLoad textpath = do
       dparms <- gets uiDparms
-      let path = (dpIndir dparms) </> T.unpack textpath
+      let path = dpIndir dparms </> T.unpack textpath
       -- Read the data
       liftIO $ putStrLn ("Reading file " <> path)
       contents <- handleExceptT handler $ liftIO $ T.readFile path
       -- Write the filename into the UIState
       putDparm $ dpSetFilename (takeBaseName path) dparms
       -- Verify the data
-      (verifyVectors $ parseLine <$> T.lines contents) >>= verifyNonZeroVecs >>= verifyDims
+      verifyVectors (parseLine <$> T.lines contents) >>= verifyNonZeroVecs >>= verifyDims
     parseLine :: Text -> V.Vector (Maybe Double)     -- The outer Maybe is for unfoldr
     parseLine l = V.unfoldr step (skipBlanks l)      -- The inner for error handling!
       where
@@ -174,7 +172,7 @@ uiLoadHss parms =
             Left _ -> Just $ (Nothing , "")
             Right (!d, !t) -> Just $ (Just d, skipBlanks t)
         skipBlanks :: Text -> Text
-        skipBlanks = T.dropWhile (isSpace)
+        skipBlanks = T.dropWhile isSpace
     verifyVectors :: (MonadIO m) => [V.Vector (Maybe Double)] -> ExceptT Text m [VU.Vector Double]
     verifyVectors vecs = do
         let toUnboxed :: V.Vector (Maybe Double) -> VU.Vector Double
@@ -195,10 +193,10 @@ uiLoadHss parms =
           _ -> throwError $ T.pack ("Not all input equations have the same dimension " ++ show dims)
     verifyNonZeroVecs :: (MonadIO m) => [VU.Vector Double] -> ExceptT Text m [VU.Vector Double]
     verifyNonZeroVecs vecs = do
-        let vs = (VU.init <$> vecs)              -- only coeffs
-            vsa = fmap (VU.map abs) vs           -- take them positive
-            vss = VU.sum <$> vsa                 --  sum
-            ps = zip ([1..]::[Int]) vss            -- pair them with line numbers
+        let vs = VU.init <$> vecs                 -- only coeffs
+            vsa = fmap (VU.map abs) vs            -- take them positive
+            vss = VU.sum <$> vsa                  --  sum
+            ps = zip ([1..]::[Int]) vss           -- pair them with line numbers
             zeros = filter ((< 0.001) . snd) ps
         if null zeros
           then return vecs
@@ -220,8 +218,8 @@ doHsi poly = do
         throwError msg
       (Right newPoly) -> do
         liftIO $ do
-          putStrLn $ show $ polyStats newPoly
-          putStrLn $ show $ checkFormulaEuler newPoly
+          print $ polyStats newPoly
+          print $ checkFormulaEuler newPoly
         -- update state: remove halfspaces, add polytope
         putPoly $ Just newPoly
     putHss []
@@ -232,9 +230,9 @@ uiList = do
     liftIO $ putStrLn "Unprocessed Halfspaces:"
     liftIO $ putStrLn "-----------------------"
     hslist <- gets uiHss
-    if (null hslist)
+    if null hslist
         then liftIO $ putStrLn "(empty)"
-        else liftIO $ mapM_ putStrLn $ map show hslist
+        else liftIO $ mapM_ print hslist
     runExceptT
       (verifyPoly >>= doListPoly)
       >>= report
@@ -242,9 +240,9 @@ uiList = do
     doListPoly :: MonadIO m => HsiPolytope -> ExceptT Text m ()
     doListPoly poly = liftIO $ do
       putStrLn "\nPolytope"
-      putStrLn $ show poly
-      putStrLn $ show $ polyStats poly
-      putStrLn $ show $ checkFormulaEuler poly
+      print poly
+      print $ polyStats poly
+      print $ checkFormulaEuler poly
 
 -- Display the current polytope with the current display parameters
 uiDisplay :: (MonadState UiState m, MonadIO m) => [Text] -> m()
@@ -306,7 +304,7 @@ verifyNumTokens toks = do
     let part = partition isNothing $ parse <$> toks
     if null (fst part)
          then return $ VU.fromList $ fromJust <$> snd part
-         else throwError $ "Not all tokens are numeric"
+         else throwError "Not all tokens are numeric"
   where
     parse :: Text -> Maybe Double
     parse tok = case T.double tok of
@@ -333,7 +331,7 @@ verifyPoly = do
   where
     go :: (MonadIO m) => Maybe HsiPolytope -> ExceptT Text m HsiPolytope
     go (Just poly) = return poly
-    go  Nothing     = throwError ("No polytope found")
+    go  Nothing     = throwError "No polytope found"
 
 verifyBoolean :: (MonadState UiState m, MonadIO m) => Text -> Text -> ExceptT Text m Bool
 verifyBoolean _  "0" = return False

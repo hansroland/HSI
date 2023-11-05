@@ -19,7 +19,7 @@ import qualified Data.EnumMap.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad.Except
-import Data.Maybe(catMaybes)
+import Data.Maybe(mapMaybe)
 
 -- An IndexedEdge is an edge with indexes to a vertice map.
 -- A verice map contains vertices indexed by NodeKeys.
@@ -147,7 +147,7 @@ mkRect x0 x1 y0 y1 =
 
 -- convert a DrawObject to a list of Svgs
 drawObjToLines :: Bool -> DrawObj -> [Line]
-drawObjToLines showHidden (DrawObj edges pmap) = catMaybes $ map (segToLine showHidden pmap) edges
+drawObjToLines showHidden (DrawObj edges pmap) = mapMaybe (segToLine showHidden pmap) edges
 
 -- Transform the drawObj so it fits on the drawing area
 --   1. Move the center of the drawing to the origin.

@@ -1,3 +1,5 @@
+{-# LANGUAGE StrictData #-}
+
 module Data.Graph.Display.DispParams where
 
 import Data.Graph.Display.Vect2
@@ -7,14 +9,14 @@ import qualified Data.Vector.Unboxed as VU
 
 
 data DispParams = DispParams {
-    dpSize      :: P2,                     -- Size (in html points) of the whole drawing
+    dpSize      :: !P2,                     -- Size (in html points) of the whole drawing
     dpPdir      :: Vector Double,          -- Projection direction
     dpZaxis     :: Vector Double,          -- The z-axis for correct orientation
-    dpIndir     :: FilePath,               -- Filepath to the input directory
-    dpOutdir    :: FilePath,               -- Filepath to the outpur directory
-    dpFilename  :: FilePath,               -- The FilePath to write the HTML file
-    dpHidden    :: Bool,                   -- True = Show hidden lines
-    dpAuto      :: Bool                    -- True = calculate automatically
+    dpIndir     :: !FilePath,               -- Filepath to the input directory
+    dpOutdir    :: !FilePath,               -- Filepath to the outpur directory
+    dpFilename  :: !FilePath,               -- The FilePath to write the HTML file
+    dpHidden    :: !Bool,                   -- True = Show hidden lines
+    dpAuto      :: !Bool                    -- True = calculate automatically
     -- dpJproj :: Int,
     -- dpAuge  :: Vector Double
     } deriving (Show)

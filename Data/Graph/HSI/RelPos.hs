@@ -1,5 +1,4 @@
-{-# Language GeneralisedNewtypeDeriving, DerivingStrategies #-}
-{-# Language NamedFieldPuns #-}
+{-# Language DerivingStrategies #-}
 {-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
 module Data.Graph.HSI.RelPos

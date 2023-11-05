@@ -8,11 +8,11 @@ factor = 100000
 
 -- round a double
 roundDouble :: Double -> Double
-roundDouble x = (fromInteger (round (factor * x))) / factor
+roundDouble x = fromInteger (round (factor * x)) / factor
 
 -- round a vector
 roundVector :: VU.Vector Double -> VU.Vector Double
-roundVector vec = VU.map roundDouble vec
+roundVector = VU.map roundDouble
 
 -- scalarproduct of 2 vectors
 sp :: VU.Vector Double -> VU.Vector Double -> Double

@@ -24,7 +24,7 @@ module Data.Graph.HSI.Test (
     dsDag,
     -- Init
     -- Halfspace
-    Halfspace(..),
+    Halfspace,
     HsKey,
     HsMap,
     hsFromList,
