@@ -19,7 +19,9 @@ import qualified Data.Set as Set
 
 import Control.Monad.State.Strict
     ( State, MonadState(put, get), gets, modify', execState )
-import Data.List ((\\), nub)
+import Data.List ( (\\) )
+import Data.Containers.ListUtils ( nubOrd )
+
 
 -- | Directed Acyclic Graphs.
 
@@ -78,7 +80,7 @@ dagGrandNodes :: Dag n a -> Node n a ->[(NodeKey, Node n a)]
 dagGrandNodes dag node =
   let kidskeys = nodeKids node
       kidsnodes = dagNode dag <$> kidskeys
-      grandkeys = nub $ concatMap nodeKids kidsnodes
+      grandkeys = nubOrd $ concatMap nodeKids kidsnodes
       grandnodes = dagNode dag <$> grandkeys
   in zip grandkeys grandnodes
 

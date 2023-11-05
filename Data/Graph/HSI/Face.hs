@@ -7,7 +7,7 @@ import Data.Graph.HSI.RelPos ( RelPos )
 import Data.Graph.Dag
 
 import Data.Vector.Unboxed (Vector)
-import Data.List(nub)
+import Data.Containers.ListUtils(nubOrd)
 
 -- A Face is and vertex, edge, hyperplane or side of a polytope
 data Face = Nonvert !Dim ![HsKey]                   -- A Non-Vertex stores its dimension
@@ -29,8 +29,8 @@ mkVertex hsKeys v = Vertex v hsKeys
 
 -- Add a new Halfspace key to a Face
 addHsKey :: Face -> HsKey -> Face
-addHsKey (Nonvert dim keys) k = Nonvert dim $ nub $ k : keys
-addHsKey (Vertex vect keys) k = Vertex vect $ nub $ k : keys
+addHsKey (Nonvert dim keys) k = Nonvert dim $ nubOrd $ k : keys
+addHsKey (Vertex vect keys) k = Vertex vect $ nubOrd $ k : keys
 
 -- Set the HsKeys into a Face
 faceSetHsKeys :: [HsKey] -> Face -> Face
