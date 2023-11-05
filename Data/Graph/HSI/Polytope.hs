@@ -18,6 +18,7 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import Data.List ( sortBy )
+import Data.Ord ( Down(..) )
 
 -- Type Synonyms
 type HsiPolytope = Polytope RelPos              -- A Polytope used during HSI Algorithm
@@ -34,13 +35,17 @@ instance Show a => Show (Polytope a) where
         showHsAssoc (key, hs) = show key ++ " -> " ++ show hs ++ nl
         showNodeAssoc :: Show a => (NodeKey, Node Face a) -> String
         showNodeAssoc (k,n) =  '\n' : show k ++ "=>" ++ show n
+        -- sort by descending dimension and ascending node key
         sortNodeAssoc :: [(NodeKey, Node Face a)] -> [(NodeKey, Node Face a)]
         sortNodeAssoc = sortBy cmpNode
         cmpNode :: (NodeKey, Node Face a) -> (NodeKey, Node Face a) -> Ordering
-        cmpNode (k1,n1) (k2,n2)
-          | nodeDim n1 > nodeDim n2 = LT
-          | nodeDim n1 < nodeDim n2 = GT
-          | otherwise = compare k1 k2
+        cmpNode (k1,n1) (k2,n2) =
+            let ordNode = compare (downDim n1) (downDim n2)
+            in
+                if ordNode == EQ
+                    then compare k1 k2
+                    else ordNode
+        downDim n = Down $ nodeDim n
         nl = ['\n']
 
 -- Return all the node assocs [(NodeKey, Node Face)]
@@ -62,7 +67,6 @@ polyInsertHalfspace hs poly@Polytope {polyHs} =
         hsKey = (1 + maxKey)
         newhsmap = Map.insert hsKey hs polyHs
     in  (hsKey, poly {polyHs = newhsmap})
-
 
 -- Calculate the vertex coordinates, from halfspace indices.
 -- TODO write own equation solver without fromList / toList conversion !!
