@@ -4,7 +4,7 @@ import Data.Graph.Dag
 import Data.Graph.HSI
 import Data.Graph.Display.Data
 
-import Control.Monad.State.Strict (when )
+import Control.Monad (when )
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.EnumMap.Strict as Map
 

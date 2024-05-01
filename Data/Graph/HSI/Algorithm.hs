@@ -21,7 +21,8 @@ import qualified Data.Text              as T
 
 import Data.Set (Set)
 import Data.List ( (\\) )
-import Control.Monad.State.Strict ( State, unless )
+import Control.Monad (unless)
+import Control.Monad.State.Strict ( State )
 
 -- Calculate polytope from halfspaces
 hsiPoly :: HsiPolytope -> [Halfspace] -> Either Text HsiPolytope

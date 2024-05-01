@@ -19,6 +19,7 @@ import qualified Data.EnumMap.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Control.Monad.Except
+import Control.Monad.IO.Class (MonadIO (..))
 import Data.Maybe(mapMaybe)
 
 -- An IndexedEdge is an edge with indexes to a vertice map.

@@ -12,6 +12,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TLIO
 
+import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Except
 import Control.Error (handleExceptT)
 import Control.Monad.Catch

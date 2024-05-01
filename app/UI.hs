@@ -29,6 +29,7 @@ import System.Directory
 import Control.Monad.Except
 import Control.Error (handleExceptT)
 import Control.Monad.Catch
+import Control.Monad (when)
 import System.Console.Haskeline hiding (display)
 
 -- Application state of the UI
@@ -97,8 +98,10 @@ uiCommands cmd params = do
       "outdir" -> uiOutdir params
       "projd"  -> uiProjd params
       "size"   -> uiSize params
-      _        -> liftIO $ T.putStrLn ("incorrect input `" <> cmd <> "`")
-      -- The `end`command is processed in the uiLoop Function above.
+      _        -> liftIO $ T.putStrLn (" incorrect command `" <> cmd <> "`"
+                   <> "\n possible commands: "
+                   <> "load draw indir outdir auto hidden hsi list projd size exit" )
+      -- The `exit` command is processed in the uiLoop Function above.
 
 -- General cheap error handler
 handler :: SomeException -> Text
